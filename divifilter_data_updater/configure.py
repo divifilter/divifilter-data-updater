@@ -21,4 +21,5 @@ def read_configurations(config_folder: str = "config") -> dict:
                                            default_value="https://www.portfolio-insight.com/dividend-radar")
     config["local_file_path"] = parser.read_configuration_variable("local_file_path",
                                                                    default_value="/tmp/latest_dividend_radar.xlsx")
+    config["mysql_uri"] = parser.read_configuration_variable("mysql_uri")
     return config
