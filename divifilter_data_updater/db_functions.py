@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine, MetaData, Table, Column, String, DateTime
+from sqlalchemy.dialects.mysql import insert
 import pandas as pd
 from datetime import datetime
 
@@ -17,12 +18,7 @@ class MysqlConnection:
 
             dividend_update_times = Table(
                 'dividend_update_times', meta,
-                Column('name', String(32), primary_key=True),
-                Column('last_update_time', DateTime)
+                Column('name', String(32), primary_key=True, unique=True),
+                Column('last_update_time', DateTime, unique=True)
             )
             meta.create_all(conn, tables=[dividend_update_times])
-            conn.execute(dividend_update_times.insert(), [
-                {'name': 'radar_file', 'last_update_time': radar_timestamp},
-                {'name': 'finviz', 'last_update_time': finviz_timestamp}
-            ])
-
