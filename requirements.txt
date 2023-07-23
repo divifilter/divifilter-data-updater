@@ -6,9 +6,11 @@ attrs==23.1.0
 beautifulsoup4==4.12.2
 bs4==0.0.1
 certifi==2023.5.7
+cffi==1.15.1
 charset-normalizer==3.2.0
 configobj==5.0.8
 coverage==7.2.7
+cryptography==41.0.2
 cssselect==1.2.0
 dpath==2.1.6
 et-xmlfile==1.1.0
@@ -25,6 +27,7 @@ numpy==1.25.1
 openpyxl==3.1.2
 pandas==2.0.3
 parse-it==2023.7.13.11.2
+pycparser==2.21
 pyhcl==0.4.4
 PyMySQL==1.1.0
 python-dateutil==2.8.2
@@ -39,7 +42,7 @@ SQLAlchemy==2.0.19
 tenacity==8.2.2
 toml==0.10.2
 tqdm==4.65.0
-typing-extensions==4.7.1
+typing_extensions==4.7.1
 tzdata==2023.3
 urllib3==2.0.4
 user-agent==0.1.10
