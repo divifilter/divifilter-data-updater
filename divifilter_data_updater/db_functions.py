@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, MetaData, Table, Column, String, text, exc
+from sqlalchemy import create_engine, MetaData, Table, Column, String, text
 import pandas as pd
 
 
