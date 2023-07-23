@@ -25,9 +25,11 @@ class MysqlConnection:
                                + timestamp_value + "';")
 
     def run_sql_query(self, sql_query):
-        result = self.conn.execute(text(sql_query))
+        query = text(sql_query)
+        result = self.conn.execute(query)
+        if query.is_select:
+            data = result.fetchall()
+        else:
+            data = None
         self.conn.commit()
-        try:
-            return result.fetchall()
-        except exc.ResourceClosedError:
-            return None
+        return data
