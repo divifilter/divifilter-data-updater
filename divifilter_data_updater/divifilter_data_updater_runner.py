@@ -26,4 +26,3 @@ def init():
     mysql_connection = MysqlConnection(configuration["mysql_uri"])
     mysql_connection.update_data_table_from_data_frame(radar_dict_to_table(radar_dict_filtered))
     mysql_connection.update_metadata_table(radar_file.latest_local_version, radar_file.latest_local_version)
-
