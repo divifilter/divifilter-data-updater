@@ -40,4 +40,7 @@ def init():
         mysql_connection.update_metadata_table({"radar": radar_file.latest_local_version})
 
 
+    # TODO - finish creating the functions to update the db based on finviz data, no need to check if latest as it is
+    # always updated, just update all tickers and then update the timetable with teh finviz update date to be later
+    # also shown to enduser
     mysql_connection.update_metadata_table({"finviz": get_current_datetime_string()})
