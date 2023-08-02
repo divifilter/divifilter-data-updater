@@ -23,8 +23,8 @@ def init():
                 radar_file.download_latest_version()
             starting_radar_dict = radar_file.read_radar_file_to_dict()
             radar_dict_filtered = starting_radar_dict
-            unneeded_columns = ["FV", "None", None, "Current R", "New Member", "Previous Div", "Streak Basis", "Ex-Date",
-                                "Pay-Date"]
+            unneeded_columns = ["FV", "None", None, "Current R", "New Member", "Previous Div", "Streak Basis",
+                                "Ex-Date", "Pay-Date"]
             radar_dict_filtered = remove_unneeded_columns(radar_dict_filtered, unneeded_columns)
             mysql_connection.update_data_table_from_data_frame(radar_dict_to_table(radar_dict_filtered))
             mysql_connection.update_metadata_table({"radar": radar_file.latest_local_version})
