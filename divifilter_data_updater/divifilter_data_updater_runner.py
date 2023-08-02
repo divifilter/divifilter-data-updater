@@ -5,6 +5,7 @@ from divifilter_data_updater.db_functions import *
 #from yahoo_finance import *
 #from finviz_data import *
 
+
 def init():
     configuration = read_configurations()
 
