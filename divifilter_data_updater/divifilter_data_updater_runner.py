@@ -44,5 +44,5 @@ def init():
     # TODO - finish creating the functions to update the db based on finviz data, no need to check if latest as it is
     # always updated, just update all tickers and then update the timetable with teh finviz update date to be later
     # also shown to enduser if it does not find that data in finviz fallback to yahoo and if not just keep what in the
-    # db already
+    # db already, also note the payout ratio is a new column which will likely need handling too
     mysql_connection.update_metadata_table({"finviz": get_current_datetime_string()})
