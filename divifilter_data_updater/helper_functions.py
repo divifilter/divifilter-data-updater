@@ -1,4 +1,5 @@
 import pandas as pd
+from datetime import datetime
 
 
 def radar_dict_to_table(radar_dict: dict) -> pd.DataFrame:
@@ -26,3 +27,9 @@ def remove_unneeded_columns(radar_dict: dict, unneeded_column_list: list) -> dic
         for dict_value in radar_dict.values():
             dict_value.pop(key_to_remove, None)
     return radar_dict
+
+
+def get_current_datetime_string():
+    now = datetime.now()
+    date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    return date_time
