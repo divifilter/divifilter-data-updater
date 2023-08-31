@@ -41,7 +41,7 @@ soupsieve==2.4.1
 SQLAlchemy==2.0.19
 tenacity==8.2.3
 toml==0.10.2
-tqdm==4.65.0
+tqdm==4.66.1
 typing_extensions==4.7.1
 tzdata==2023.3
 urllib3==2.0.4
