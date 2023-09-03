@@ -28,7 +28,7 @@ openpyxl==3.1.2
 pandas==2.1.0
 parse-it==2023.8.31.11.8
 pycparser==2.21
-pyhcl==0.4.4
+pyhcl==0.4.5
 PyMySQL==1.1.0
 python-dateutil==2.8.2
 python-dotenv==1.0.0
