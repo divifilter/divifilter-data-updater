@@ -17,7 +17,7 @@ et-xmlfile==1.1.0
 finviz==1.4.6
 frozendict==2.3.8
 frozenlist==1.4.0
-greenlet==2.0.2
+greenlet==3.0.0
 html5lib==1.1
 idna==3.4
 lxml==4.9.3
