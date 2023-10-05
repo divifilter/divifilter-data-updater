@@ -24,9 +24,7 @@ def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[date
             "Price": "currentPrice",
             "Low": "fiftyTwoWeekLow",
             "High": "fiftyTwoWeekHigh",
-            "P/BV": "priceToBook",
-            "Debt/Equity": "debtToEquity",
-            "ROE": "returnOnEquity"
+            "P/BV": "priceToBook"
         }
         filtered_radar_dict[stock_ticker] = {}
         for wanted_stock_key, wanted_stock_value in wanted_stock_dict.items():
