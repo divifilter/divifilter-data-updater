@@ -22,7 +22,6 @@ def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[date
     for stock_ticker in tickers_tuple:
         wanted_stock_dict = {
             "Price": "currentPrice",
-            "Payout Ratio": "payoutRatio",
             "Low": "fiftyTwoWeekLow",
             "High": "fiftyTwoWeekHigh",
             "P/BV": "priceToBook",
