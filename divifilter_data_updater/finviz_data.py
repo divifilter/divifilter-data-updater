@@ -21,14 +21,13 @@ def get_finviz_data_for_tickers_tuple(tickers_list: tuple) -> tuple[datetime, di
         try:
             stock = finviz.get_stock(stock_ticker)
 
-            # TODO - add payout and debt/eq which means also creating the columns for them
             wanted_stock_dict = {
                 "Price": "Price",
-                #"Payout Ratio": "Payout",
+                "Payout Ratio": "Payout",
                 "Low": "52W Low",
                 "High": "52W High",
                 "P/BV": "P/B",
-                #"Debt/Equity": "Debt/Eq",
+                "Debt/Equity": "Debt/Eq",
                 "ROE": "ROE",
                 "P/E": "P/E"
             }

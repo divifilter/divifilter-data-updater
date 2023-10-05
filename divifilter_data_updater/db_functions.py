@@ -62,23 +62,19 @@ class MysqlConnection:
 
         # Iterate through the ticker data and update rows in the database
         for symbol, data in ticker_data.items():
-            # Construct the SQL update statement dynamically based on columns with data
-            set_columns = []  # A list to hold the columns to update
+            # Check if the columns exist in the table; if not, create them
+            for column_name, value in data.items():
+                if not self.column_exists("dividend_data_table", column_name):
+                    self.add_column_to_table("dividend_data_table", column_name)
 
-            for column, value in data.items():
-                # Only update columns where data is provided (value is not None)
+                # Construct the SQL update statement dynamically based on columns with data
                 if value is not None:
-                    # Enclose column names with backticks to handle special characters
-                    set_columns.append(f"`{column}` = COALESCE('{value}', `{column}`)")
-
-            # Check if there are columns to update
-            if set_columns:
-                update_sql = f"""
-                    UPDATE dividend_data_table
-                    SET {" ,".join(set_columns)}
-                    WHERE Symbol = '{symbol}';
-                """
-                self.run_sql_query(update_sql)
+                    update_sql = f"""
+                        UPDATE dividend_data_table
+                        SET `{column_name}` = COALESCE('{value}', `{column_name}`)
+                        WHERE Symbol = '{symbol}';
+                    """
+                    self.run_sql_query(update_sql)
 
     def create_dividend_data_table(self):
         """
@@ -143,3 +139,13 @@ class MysqlConnection:
         tickers = [row[0] for row in result]
 
         return tickers
+
+    def column_exists(self, table_name, column_name):
+        inspector = inspect(self.engine)
+        return column_name in [col['name'] for col in inspector.get_columns(table_name)]
+
+    def add_column_to_table(self, table_name, column_name):
+        # Enclose column name with backticks to handle spaces
+        column_name_with_backticks = f"`{column_name}`"
+        self.run_sql_query(f'ALTER TABLE {table_name} ADD COLUMN {column_name_with_backticks} VARCHAR(255);')
+
