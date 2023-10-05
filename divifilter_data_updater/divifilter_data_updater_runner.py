@@ -19,7 +19,7 @@ def init():
 
     try:
         # if not the latest version of the radar file update to it
-        if mysql_update_dates["radar"] != radar_file.find_latest_version():
+        if mysql_update_dates["radar_file"] != radar_file.find_latest_version():
             if radar_file.check_if_local_is_latest() is False:
                 radar_file.download_latest_version()
             starting_radar_dict = radar_file.read_radar_file_to_dict()
@@ -28,7 +28,7 @@ def init():
                                 "Ex-Date", "Pay-Date"]
             radar_dict_filtered = remove_unneeded_columns(radar_dict_filtered, unneeded_columns)
             mysql_connection.update_data_table_from_data_frame(radar_dict_to_table(radar_dict_filtered))
-            mysql_connection.update_metadata_table({"radar": radar_file.latest_local_version})
+            mysql_connection.update_metadata_table({"radar_file": radar_file.latest_local_version})
     # if there was a problem let's recreate all the data to be sure
     except Exception:
         radar_file.download_latest_version()
@@ -38,7 +38,7 @@ def init():
                             "Pay-Date"]
         radar_dict_filtered = remove_unneeded_columns(radar_dict_filtered, unneeded_columns)
         mysql_connection.update_data_table_from_data_frame(radar_dict_to_table(radar_dict_filtered))
-        mysql_connection.update_metadata_table({"radar": radar_file.latest_local_version})
+        mysql_connection.update_metadata_table({"radar_file": radar_file.latest_local_version})
 
     # always updated, just update all tickers and then update the timetable with yahoo & finviz update date to be later
     # also shown to enduser if it does not find that data in finviz fallback to yahoo and if not just keep what in the
