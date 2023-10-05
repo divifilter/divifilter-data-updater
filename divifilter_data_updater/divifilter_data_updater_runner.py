@@ -2,8 +2,8 @@ from divifilter_data_updater.dividend_radar import *
 from divifilter_data_updater.configure import *
 from divifilter_data_updater.helper_functions import *
 from divifilter_data_updater.db_functions import *
-#from yahoo_finance import *
-#from finviz_data import *
+#from divifilter_data_updater.yahoo_finance import *
+from divifilter_data_updater.finviz_data import *
 
 
 def init():
@@ -46,3 +46,5 @@ def init():
     # also shown to enduser if it does not find that data in finviz fallback to yahoo and if not just keep what in the
     # db already, also note the payout ratio is a new column which will likely need handling too
     mysql_connection.update_metadata_table({"finviz": get_current_datetime_string()})
+    finviz_data = get_finviz_data_for_tickers_list(mysql_connection.get_tickers_from_db())
+    mysql_connection.update_finviz_data_table(finviz_data)

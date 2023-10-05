@@ -7,7 +7,7 @@ import requests
 @retry(wait_exponential_multiplier=2500, wait_exponential_max=10000, stop_max_attempt_number=10)
 def get_finviz_data_for_tickers_tuple(tickers_list: tuple) -> tuple[datetime, dict]:
     """
-    Takes a tuple of tickers and returns the relevant data for them from finvizfinance.
+    Takes a tuple of tickers and returns the relevant data for them from finviz.
 
     :param tickers_list: the tuple of tickers you want the data for
 
@@ -23,11 +23,11 @@ def get_finviz_data_for_tickers_tuple(tickers_list: tuple) -> tuple[datetime, di
 
             wanted_stock_dict = {
                 "Price": "Price",
-                "Payout Ratio": "Payout",
+                #"Payout Ratio": "Payout",
                 "Low": "52W Low",
                 "High": "52W High",
                 "P/BV": "P/B",
-                "Debt/Equity": "Debt/Eq",
+                #"Debt/Equity": "Debt/Eq",
                 "ROE": "ROE",
                 "P/E": "P/E"
             }
