@@ -43,12 +43,15 @@ def init():
     # always updated, just update all tickers and then update the timetable with yahoo & finviz update date to be later
     # also shown to enduser if it does not find that data in finviz fallback to yahoo and if not just keep what in the
     # db already
-    tickers_list = mysql_connection.get_tickers_from_db()
+    if configuration["scrape_yahoo_finance"] is True or configuration["scrape_finviz"] is True:
+        tickers_list = mysql_connection.get_tickers_from_db()
 
-    mysql_connection.update_metadata_table({"yahoo_finance": get_current_datetime_string()})
-    yahoo_data = get_yahoo_finance_data_for_tickers_list(tickers_list)
-    mysql_connection.update_data_table(yahoo_data)
+        if configuration["scrape_yahoo_finance"] is True:
+            mysql_connection.update_metadata_table({"yahoo_finance": get_current_datetime_string()})
+            yahoo_data = get_yahoo_finance_data_for_tickers_list(tickers_list)
+            mysql_connection.update_data_table(yahoo_data)
 
-    mysql_connection.update_metadata_table({"finviz": get_current_datetime_string()})
-    finviz_data = get_finviz_data_for_tickers_list(tickers_list)
-    mysql_connection.update_data_table(finviz_data)
+        if configuration["scrape_finviz"] is True:
+            mysql_connection.update_metadata_table({"finviz": get_current_datetime_string()})
+            finviz_data = get_finviz_data_for_tickers_list(tickers_list)
+            mysql_connection.update_data_table(finviz_data)

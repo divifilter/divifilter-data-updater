@@ -11,7 +11,7 @@ def get_finviz_data_for_tickers_tuple(tickers_list: tuple) -> tuple[datetime, di
 
     :param tickers_list: the tuple of tickers you want the data for
 
-    :return finvizfinance_query_date_time: the date and time in UTC finvizfinance was queried at
+    :return finviz_query_date_time: the date and time in UTC finviz was queried at
     :return filtered_radar_dict: A dict including all data for tickers requested
     """
 
@@ -41,8 +41,8 @@ def get_finviz_data_for_tickers_tuple(tickers_list: tuple) -> tuple[datetime, di
         except requests.exceptions.HTTPError:
             pass
 
-    finvizfinance_query_date_time = datetime.now(timezone.utc)
-    return finvizfinance_query_date_time, filtered_radar_dict
+    finviz_query_date_time = datetime.now(timezone.utc)
+    return finviz_query_date_time, filtered_radar_dict
 
 
 def get_finviz_data_for_tickers_list(tickers_list: list) -> tuple[datetime, dict]:
