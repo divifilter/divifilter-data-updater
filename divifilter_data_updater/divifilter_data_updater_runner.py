@@ -2,7 +2,7 @@ from divifilter_data_updater.dividend_radar import *
 from divifilter_data_updater.configure import *
 from divifilter_data_updater.helper_functions import *
 from divifilter_data_updater.db_functions import *
-#from divifilter_data_updater.yahoo_finance import *
+from divifilter_data_updater.yahoo_finance import *
 from divifilter_data_updater.finviz_data import *
 
 
@@ -40,11 +40,15 @@ def init():
         mysql_connection.update_data_table_from_data_frame(radar_dict_to_table(radar_dict_filtered))
         mysql_connection.update_metadata_table({"radar": radar_file.latest_local_version})
 
-
-    # TODO - finish creating the functions to update the db based on finviz data, no need to check if latest as it is
-    # always updated, just update all tickers and then update the timetable with teh finviz update date to be later
+    # always updated, just update all tickers and then update the timetable with yahoo & finviz update date to be later
     # also shown to enduser if it does not find that data in finviz fallback to yahoo and if not just keep what in the
-    # db already, also note the payout ratio is a new column which will likely need handling too
+    # db already
+    tickers_list = mysql_connection.get_tickers_from_db()
+
+    mysql_connection.update_metadata_table({"yahoo_finance": get_current_datetime_string()})
+    yahoo_data = get_yahoo_finance_data_for_tickers_list(tickers_list)
+    mysql_connection.update_data_table(yahoo_data)
+
     mysql_connection.update_metadata_table({"finviz": get_current_datetime_string()})
-    finviz_data = get_finviz_data_for_tickers_list(mysql_connection.get_tickers_from_db())
-    mysql_connection.update_finviz_data_table(finviz_data)
+    finviz_data = get_finviz_data_for_tickers_list(tickers_list)
+    mysql_connection.update_data_table(finviz_data)

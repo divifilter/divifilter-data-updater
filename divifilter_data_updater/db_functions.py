@@ -40,7 +40,7 @@ class MysqlConnection:
         data_dict = dict(self.conn.execute(select(self.dividend_update_times)).fetchall())
         return data_dict
 
-    def update_finviz_data_table(self, finviz_data: tuple):
+    def update_data_table(self, finviz_data: tuple):
         """
         Update the 'dividend_data_table' with data obtained from Finviz for a list of tickers.
 
@@ -63,18 +63,22 @@ class MysqlConnection:
         # Iterate through the ticker data and update rows in the database
         for symbol, data in ticker_data.items():
             # Construct the SQL update statement dynamically based on columns with data
-            update_sql = f"""
-                UPDATE dividend_data_table
-                SET
-            """
+            set_columns = []  # A list to hold the columns to update
+
             for column, value in data.items():
                 # Only update columns where data is provided (value is not None)
                 if value is not None:
                     # Enclose column names with backticks to handle special characters
-                    update_sql += f"`{column}` = COALESCE('{value}', `{column}`), "
-            update_sql = update_sql.rstrip(', ')  # Remove the trailing comma and space
-            update_sql += f"WHERE Symbol = '{symbol}';"
-            self.run_sql_query(update_sql)
+                    set_columns.append(f"`{column}` = COALESCE('{value}', `{column}`)")
+
+            # Check if there are columns to update
+            if set_columns:
+                update_sql = f"""
+                    UPDATE dividend_data_table
+                    SET {" ,".join(set_columns)}
+                    WHERE Symbol = '{symbol}';
+                """
+                self.run_sql_query(update_sql)
 
     def create_dividend_data_table(self):
         """

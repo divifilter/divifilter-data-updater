@@ -20,13 +20,15 @@ def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[date
     tickers = yf.Tickers(list(tickers_tuple))
 
     for stock_ticker in tickers_tuple:
+        # TODO - add all fields that have good info
+        # TODO - add payout and debt/eq which means also creating the columns for them
         wanted_stock_dict = {
             "Price": "currentPrice",
-            "Payout Ratio": "payoutRatio",
+            #"Payout Ratio": "payoutRatio",
             "Low": "fiftyTwoWeekLow",
             "High": "fiftyTwoWeekHigh",
             "P/BV": "priceToBook",
-            "Debt/Equity": "debtToEquity",
+            #"Debt/Equity": "debtToEquity",
             "ROE": "returnOnEquity"
         }
         filtered_radar_dict[stock_ticker] = {}
