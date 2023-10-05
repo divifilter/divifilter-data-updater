@@ -1,5 +1,7 @@
 FROM python:3.11.5
 
+ENV PYTHONUNBUFFERED=1
+
 WORKDIR /divifilter
 
 COPY . /divifilter
