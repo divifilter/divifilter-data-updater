@@ -25,7 +25,7 @@ multidict==6.0.4
 multitasking==0.0.11
 numpy==1.26.0
 openpyxl==3.1.2
-pandas==2.1.1
+pandas==2.1.4
 parse-it==2023.10.5.16.31
 pycparser==2.21
 pyhcl==0.4.5
