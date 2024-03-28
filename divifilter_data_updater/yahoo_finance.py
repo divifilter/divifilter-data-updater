@@ -2,6 +2,7 @@ import yfinance as yf
 from retrying import retry
 from datetime import datetime, timezone
 import requests
+import logging
 
 
 @retry(wait_exponential_multiplier=250, wait_exponential_max=1000, stop_max_attempt_number=3)
@@ -63,3 +64,9 @@ def get_yahoo_finance_data_for_tickers_list(tickers_list: list) -> tuple[datetim
     """
 
     return get_yahoo_finance_data_for_tickers_tuple(tuple(tickers_list))
+
+
+def disable_yahoo_logs():
+    logger = logging.getLogger('yfinance')
+    logger.disabled = True
+    logger.propagate = False

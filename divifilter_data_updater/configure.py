@@ -24,4 +24,5 @@ def read_configurations(config_folder: str = "config") -> dict:
     config["mysql_uri"] = parser.read_configuration_variable("mysql_uri")
     config["scrape_yahoo_finance"] = parser.read_configuration_variable("scrape_yahoo_finance", default_value=True)
     config["scrape_finviz"] = parser.read_configuration_variable("scrape_finviz", default_value=True)
+    config["disable_yahoo_logs"] = parser.read_configuration_variable("disable_yahoo_logs", default_value=True)
     return config

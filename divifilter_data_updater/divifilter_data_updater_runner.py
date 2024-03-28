@@ -17,6 +17,10 @@ def init():
     mysql_connection = MysqlConnection(configuration["mysql_uri"])
     mysql_update_dates = mysql_connection.check_db_update_dates()
 
+    # disable yahoo spammy logs if set
+    if configuration["disable_yahoo_logs"] is True:
+        disable_yahoo_logs()
+
     try:
         # if not the latest version of the radar file update to it
         if mysql_update_dates["radar_file"] != radar_file.find_latest_version():
