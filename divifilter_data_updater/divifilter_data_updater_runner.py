@@ -51,7 +51,8 @@ def init():
             yahoo_data = get_yahoo_finance_data_for_tickers_list(tickers_list)
             mysql_connection.update_data_table(yahoo_data)
 
-        if configuration["scrape_finviz"] is True:
-            mysql_connection.update_metadata_table({"finviz": get_current_datetime_string()})
-            finviz_data = get_finviz_data_for_tickers_list(tickers_list)
-            mysql_connection.update_data_table(finviz_data)
+        # finviz library is currently broken, waiting for it to be fixed upstream
+        #if configuration["scrape_finviz"] is True:
+        #    mysql_connection.update_metadata_table({"finviz": get_current_datetime_string()})
+        #    finviz_data = get_finviz_data_for_tickers_list(tickers_list)
+        #    mysql_connection.update_data_table(finviz_data)
