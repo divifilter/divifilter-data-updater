@@ -32,8 +32,17 @@ def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[date
             try:
                 filtered_radar_dict[stock_ticker][wanted_stock_key] = \
                     tickers.tickers[stock_ticker.upper()].info[wanted_stock_value]
+            # this is ugly but yahoo finance does not like dots in the stock names and replace them inconsistently
             except KeyError:
-                pass
+                dot_ticker = yf.Ticker(stock_ticker.replace(".", "-"))
+                try:
+                    filtered_radar_dict[stock_ticker][wanted_stock_key] = dot_ticker.info[wanted_stock_value]
+                except KeyError:
+                    dot_ticker = yf.Ticker(stock_ticker.replace(".", ""))
+                    try:
+                        filtered_radar_dict[stock_ticker][wanted_stock_key] = dot_ticker.info[wanted_stock_value]
+                    except KeyError:
+                        pass
             except TypeError:
                 pass
             except requests.exceptions.HTTPError:
