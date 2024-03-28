@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import requests
 
 
-@retry(wait_exponential_multiplier=2500, wait_exponential_max=10000, stop_max_attempt_number=10)
+@retry(wait_exponential_multiplier=250, wait_exponential_max=1000, stop_max_attempt_number=3)
 def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[datetime, dict]:
     """
     Takes a tuple of tickers and returns the relevant data for them from yahoo_finance, have to use tuple because of
