@@ -5,6 +5,9 @@ import pandas as pd
 class MysqlConnection:
 
     def __init__(self, uri_string: str):
+        # check due to pymsql requiring changes to the URI string that are often forgetten
+        if "pymysql" not in uri_string:
+            uri_string = uri_string.replace("mysql", "mysql+pymysql", 1)
         self.engine = create_engine(uri_string, echo=False)
         self.conn = self.engine.connect()
         self.meta = MetaData()
