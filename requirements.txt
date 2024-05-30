@@ -26,7 +26,7 @@ multitasking==0.0.11
 numpy==1.26.4
 openpyxl==3.1.2
 pandas==2.2.2
-parse_it==2024.5.28.8.25
+parse_it==2024.5.30.10.31
 peewee==3.17.5
 pycparser==2.22
 pyhcl==0.4.5
