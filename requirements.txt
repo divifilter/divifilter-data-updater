@@ -49,5 +49,5 @@ urllib3==2.2.3
 user-agent==0.1.10
 webencodings==0.5.1
 xmltodict==0.13.0
-yarl==1.9.4
+yarl==1.13.1
 yfinance==0.2.43
