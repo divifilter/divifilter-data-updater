@@ -3,6 +3,7 @@ from retrying import retry
 from datetime import datetime, timezone
 import requests
 import logging
+import json
 
 
 @retry(wait_exponential_multiplier=250, wait_exponential_max=1000, stop_max_attempt_number=3)
@@ -47,6 +48,8 @@ def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[date
             except TypeError:
                 pass
             except requests.exceptions.HTTPError:
+                pass
+            except json.decoder.JSONDecodeError:
                 pass
     yahoo_finance_query_date_time = datetime.now(timezone.utc)
     return yahoo_finance_query_date_time, filtered_radar_dict
