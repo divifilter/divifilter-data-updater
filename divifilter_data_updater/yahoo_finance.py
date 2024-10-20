@@ -6,7 +6,7 @@ import logging
 import json
 
 
-#@retry(wait_exponential_multiplier=250, wait_exponential_max=1000, stop_max_attempt_number=3)
+@retry(wait_exponential_multiplier=250, wait_exponential_max=1000, stop_max_attempt_number=3)
 def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[datetime, dict]:
     """
     Takes a tuple of tickers and returns the relevant data for them from yahoo_finance, have to use tuple because of
@@ -45,24 +45,12 @@ def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[date
                         filtered_radar_dict[stock_ticker][wanted_stock_key] = dot_ticker.info[wanted_stock_value]
                     except KeyError:
                         pass
-                    except json.decoder.JSONDecodeError as e:
-                        print("error_start")
-                        print(e)
-                        print("error_end")
-                    except Exception as e:
-                        print("error_start")
-                        print(e)
-                        print("error_end")
             except TypeError:
                 pass
             except requests.exceptions.HTTPError:
                 pass
             except json.decoder.JSONDecodeError:
                 pass
-            except Exception as e:
-                print("error_start")
-                print(e)
-                print("error_end")
     yahoo_finance_query_date_time = datetime.now(timezone.utc)
     return yahoo_finance_query_date_time, filtered_radar_dict
 
