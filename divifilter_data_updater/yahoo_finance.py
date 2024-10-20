@@ -52,7 +52,9 @@ def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[date
             except json.decoder.JSONDecodeError:
                 pass
             except Exception as e:
+                print("error_start")
                 print(e)
+                print("error_end")
     yahoo_finance_query_date_time = datetime.now(timezone.utc)
     return yahoo_finance_query_date_time, filtered_radar_dict
 
