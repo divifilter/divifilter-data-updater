@@ -45,7 +45,7 @@ def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[date
                         filtered_radar_dict[stock_ticker][wanted_stock_key] = dot_ticker.info[wanted_stock_value]
                     except KeyError:
                         pass
-                    except json.decoder.JSONDecodeError:
+                    except json.decoder.JSONDecodeError as e:
                         print("error_start")
                         print(e)
                         print("error_end")
