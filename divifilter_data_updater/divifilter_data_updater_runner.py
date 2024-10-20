@@ -61,3 +61,6 @@ def init():
             #    mysql_connection.update_metadata_table({"finviz": get_current_datetime_string()})
             #    finviz_data = get_finviz_data_for_tickers_list(tickers_list)
             #    mysql_connection.update_data_table(finviz_data)
+
+        # add a random delay between runs, if zero there will be non
+        random_delay(configuration["max_random_delay_seconds"])

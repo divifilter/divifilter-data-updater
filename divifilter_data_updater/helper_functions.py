@@ -1,5 +1,7 @@
 import pandas as pd
 from datetime import datetime
+import random
+import time
 
 
 def radar_dict_to_table(radar_dict: dict) -> pd.DataFrame:
@@ -33,3 +35,14 @@ def get_current_datetime_string():
     now = datetime.now()
     date_time = now.strftime("%Y-%m-%d %H:%M:%S")
     return date_time
+
+
+def random_delay(max_delay_time: int):
+    """
+    sleep a random amount of time
+
+    :param max_delay_time: Max time in seconds it is ok to delay
+    """
+    delay_time = random.randint(0, max_delay_time)
+    print("will now sleep for " + str(delay_time) + " seconds")
+    time.sleep(delay_time)

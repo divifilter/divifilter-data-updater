@@ -25,4 +25,5 @@ def read_configurations(config_folder: str = "config") -> dict:
     config["scrape_yahoo_finance"] = parser.read_configuration_variable("scrape_yahoo_finance", default_value=True)
     config["scrape_finviz"] = parser.read_configuration_variable("scrape_finviz", default_value=True)
     config["disable_yahoo_logs"] = parser.read_configuration_variable("disable_yahoo_logs", default_value=True)
+    config["max_random_delay_seconds"] = parser.read_configuration_variable("db_schema", default_value=3600)
     return config
