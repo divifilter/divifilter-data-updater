@@ -17,7 +17,7 @@ dpath==2.2.0
 et-xmlfile==1.1.0
 finviz==1.4.6
 frozendict==2.4.6
-frozenlist==1.4.1
+frozenlist==1.5.0
 greenlet==3.1.1
 html5lib==1.1
 idna==3.10
