@@ -30,7 +30,7 @@ pandas==2.2.3
 parse_it==2024.11.18.10.11
 peewee==3.17.8
 platformdirs==4.3.6
-propcache==0.2.0
+propcache==0.2.1
 pycparser==2.22
 pyhcl==0.4.5
 PyMySQL==1.1.1
