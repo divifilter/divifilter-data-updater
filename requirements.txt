@@ -6,7 +6,7 @@ async-timeout==5.0.1
 attrs==24.2.0
 beautifulsoup4==4.12.3
 bs4==0.0.2
-certifi==2024.8.30
+certifi==2024.12.14
 cffi==1.17.1
 charset-normalizer==3.4.0
 configobj==5.0.9
