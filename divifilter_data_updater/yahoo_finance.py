@@ -6,7 +6,7 @@ import logging
 import json
 
 
-@retry(wait_exponential_multiplier=250, wait_exponential_max=1000, stop_max_attempt_number=3)
+@retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_attempt_number=10)
 def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[datetime, dict]:
     """
     Takes a tuple of tickers and returns the relevant data for them from yahoo_finance, have to use tuple because of
