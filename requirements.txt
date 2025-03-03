@@ -47,7 +47,7 @@ tenacity==9.0.0
 toml==0.10.2
 tqdm==4.67.1
 typing_extensions==4.12.2
-tzdata==2024.2
+tzdata==2025.1
 urllib3==2.3.0
 user_agent==0.1.10
 webencodings==0.5.1
