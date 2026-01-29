@@ -19,42 +19,80 @@ class DripInvestingScraper:
 
     def get_tickers(self):
         """
-        Scrapes the main stocks page to find all ticker URLs.
+        Scrapes the main stocks page and all pagination pages to find all ticker URLs.
         Returns a list of dictionaries: [{'symbol': 'JNJ', 'url': '...'}]
         """
-        self.logger.info(f"Fetching tickers from {self.STOCKS_URL}...")
-        try:
-            response = self.session.get(self.STOCKS_URL)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.content, 'html.parser')
+        all_tickers = []
+        seen_symbols = set()
+        page = 1
+        
+        while True:
+            # Construct URL for current page
+            if page == 1:
+                url = self.STOCKS_URL
+            else:
+                url = f"{self.STOCKS_URL}?stocks_page={page}"
             
-            tickers = []
-            # Find links ending with -dividend-history-calculator-returns/
-            # and containing text that looks like a ticker (uppercase, 1-5 chars)
-            links = soup.find_all('a', href=re.compile(r'-dividend-history-calculator-returns/$'))
+            self.logger.info(f"Fetching tickers from page {page}: {url}")
             
-            seen_symbols = set()
-            
-            for link in links:
-                url = link['href']
-                text = link.get_text(strip=True)
+            try:
+                response = self.session.get(url)
                 
-                # Simple heuristic for ticker symbol
-                if text and text.isupper() and len(text) <= 5 and text not in seen_symbols:
-                    if not url.startswith("http"):
-                        url = self.BASE_URL + url if url.startswith("/") else self.BASE_URL + "/" + url
+                # If we get a 404, we might have reached the end (though usually it just returns empty or same page)
+                if response.status_code == 404:
+                    self.logger.info(f"Reached end of pagination at page {page} (404)")
+                    break
                     
-                    tickers.append({
-                        "symbol": text,
-                        "url": url
-                    })
-                    seen_symbols.add(text)
-            
-            self.logger.info(f"Found {len(tickers)} tickers.")
-            return tickers
-        except Exception as e:
-            self.logger.error(f"Error fetching tickers: {e}")
-            return []
+                response.raise_for_status()
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Find links ending with -dividend-history-calculator-returns/
+                links = soup.find_all('a', href=re.compile(r'-dividend-history-calculator-returns/$'))
+                
+                # Track if we found any new tickers on this page
+                found_any_new_on_this_page = False
+                
+                for link in links:
+                    url_path = link['href']
+                    text = link.get_text(strip=True)
+                    
+                    # Simple heuristic for ticker symbol
+                    if text and text.isupper() and len(text) <= 5 and text not in seen_symbols:
+                        if not url_path.startswith("http"):
+                            url_path = self.BASE_URL + url_path if url_path.startswith("/") else self.BASE_URL + "/" + url_path
+                        
+                        all_tickers.append({
+                            "symbol": text,
+                            "url": url_path
+                        })
+                        seen_symbols.add(text)
+                        found_any_new_on_this_page = True
+                
+                # If we didn't find any NEW tickers on this page, and it's not the first page, we stop.
+                # Usually if you go past the last page, it either shows an empty list or the first page.
+                if not found_any_new_on_this_page and page > 1:
+                    self.logger.info(f"No new tickers found on page {page}, stopping pagination")
+                    break
+                
+                # If the page had NO stock links at all, we also stop
+                if not links:
+                    self.logger.info(f"No stock links found on page {page}, stopping pagination")
+                    break
+
+                page += 1
+                
+                # Safety limit to prevent infinite loops (user said 7 pages, but we'll go up to 20)
+                if page > 20:
+                    self.logger.warning("Reached safety limit of 20 pages")
+                    break
+                    
+            except Exception as e:
+                self.logger.error(f"Error fetching page {page}: {e}")
+                break
+        
+        self.logger.info(f"Found {len(all_tickers)} unique tickers across {page-1} pages.")
+        return all_tickers
+
 
     def clean_numeric_value(self, value):
         """
