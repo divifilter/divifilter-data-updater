@@ -156,7 +156,7 @@ class DripInvestingScraper:
                     elif label == "Low (52W)":
                         data["Low"] = value
                     elif label == "Fair Value (Blended)":
-                        data["FV"] = value
+                        data["Fair Value"] = value
                     elif label == "FV (Blended) %":
                         data["FV %"] = value
                     else:
@@ -178,7 +178,7 @@ class DripInvestingScraper:
                 "DGR 1Y", "DGR 3Y", "DGR 5Y", "DGR 10Y", "TTR 1Y", "TTR 3Y",
                 "Chowder Number", "PEG", "P/E", "P/BV", "ROE", "NPM", "ROTC",
                 "Debt/Capital", "CF/Share", "Revenue 1Y", "EPS 1Y",
-                "High", "Low", "Payout Ratio", "Market Cap", "FV", "FV %"
+                "High", "Low", "Payout Ratio", "Market Cap", "Fair Value", "FV %"
             ]
             
             for field in numeric_fields:
