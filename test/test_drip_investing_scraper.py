@@ -109,7 +109,8 @@ class TestDripInvestingScraper(unittest.TestCase):
         self.assertEqual(data['P/E'], 40.8)
         self.assertIsInstance(data['P/E'], float)
         
-        self.assertEqual(data['No Years'], '63')
+        self.assertEqual(data['No Years'], 63)
+        self.assertIsInstance(data['No Years'], float) # Note: clean_numeric_value returns float
 
 
 if __name__ == '__main__':

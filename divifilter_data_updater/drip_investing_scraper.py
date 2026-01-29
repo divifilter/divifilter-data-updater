@@ -174,7 +174,7 @@ class DripInvestingScraper:
             # 3. Clean numeric fields
             # These fields need to be numeric for filtering/comparison
             numeric_fields = [
-                "Price", "Div Yield", "5Y Avg Yield", "Current Div", "Annualized",
+                "No Years", "Price", "Div Yield", "5Y Avg Yield", "Current Div", "Annualized",
                 "DGR 1Y", "DGR 3Y", "DGR 5Y", "DGR 10Y", "TTR 1Y", "TTR 3Y",
                 "Chowder Number", "PEG", "P/E", "P/BV", "ROE", "NPM", "ROTC",
                 "Debt/Capital", "CF/Share", "Revenue 1Y", "EPS 1Y",

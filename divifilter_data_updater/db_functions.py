@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, MetaData, Table, Column, String, text, select, inspect
+from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer, Float, text, select, inspect
 import pandas as pd
 
 
@@ -72,11 +72,18 @@ class MysqlConnection:
 
                 # Construct the SQL update statement dynamically based on columns with data
                 if value is not None:
-                    update_sql = f"""
-                        UPDATE dividend_data_table
-                        SET `{column_name}` = COALESCE('{value}', `{column_name}`)
-                        WHERE Symbol = '{symbol}';
-                    """
+                    if isinstance(value, (int, float)):
+                        update_sql = f"""
+                            UPDATE dividend_data_table
+                            SET `{column_name}` = COALESCE({value}, `{column_name}`)
+                            WHERE Symbol = '{symbol}';
+                        """
+                    else:
+                        update_sql = f"""
+                            UPDATE dividend_data_table
+                            SET `{column_name}` = COALESCE('{value}', `{column_name}`)
+                            WHERE Symbol = '{symbol}';
+                        """
                     self.run_sql_query(update_sql)
 
     def create_dividend_data_table(self):
@@ -91,34 +98,34 @@ class MysqlConnection:
             Column('Symbol', String(32), primary_key=True),
             Column('Company', String(255)),
             Column('Sector', String(255)),
-            Column('No Years', String(32)),
-            Column('Price', String(32)),
-            Column('Div Yield', String(32)),
-            Column('5Y Avg Yield', String(32)),
-            Column('Current Div', String(32)),
+            Column('No Years', Integer),
+            Column('Price', Float),
+            Column('Div Yield', Float),
+            Column('5Y Avg Yield', Float),
+            Column('Current Div', Float),
             Column('Payouts/ Year', String(32)),
-            Column('Annualized', String(32)),
-            Column('Low', String(32)),
-            Column('High', String(32)),
-            Column('DGR 1Y', String(32)),
-            Column('DGR 3Y', String(32)),
-            Column('DGR 5Y', String(32)),
-            Column('DGR 10Y', String(32)),
-            Column('TTR 1Y', String(32)),
-            Column('TTR 3Y', String(32)),
-            Column('Fair Value', String(32)),
-            Column('FV %', String(32)),
-            Column('Chowder Number', String(32)),
-            Column('EPS 1Y', String(32)),
-            Column('Revenue 1Y', String(32)),
-            Column('NPM', String(32)),
-            Column('CF/Share', String(32)),
-            Column('ROE', String(32)),
-            Column('Debt/Capital', String(32)),
-            Column('ROTC', String(32)),
-            Column('P/E', String(32)),
-            Column('P/BV', String(32)),
-            Column('PEG', String(32)),
+            Column('Annualized', Float),
+            Column('Low', Float),
+            Column('High', Float),
+            Column('DGR 1Y', Float),
+            Column('DGR 3Y', Float),
+            Column('DGR 5Y', Float),
+            Column('DGR 10Y', Float),
+            Column('TTR 1Y', Float),
+            Column('TTR 3Y', Float),
+            Column('Fair Value', Float),
+            Column('FV %', Float),
+            Column('Chowder Number', Float),
+            Column('EPS 1Y', Float),
+            Column('Revenue 1Y', Float),
+            Column('NPM', Float),
+            Column('CF/Share', Float),
+            Column('ROE', Float),
+            Column('Debt/Capital', Float),
+            Column('ROTC', Float),
+            Column('P/E', Float),
+            Column('P/BV', Float),
+            Column('PEG', Float),
             Column('Industry', String(255))
         )
 
