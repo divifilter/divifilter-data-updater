@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import yfinance as yf
 from retrying import retry
 from datetime import datetime, timezone
 import requests
 import logging
 import json
+
 
 
 @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_attempt_number=10)
