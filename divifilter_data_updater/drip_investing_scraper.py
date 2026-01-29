@@ -187,9 +187,10 @@ class DripInvestingScraper:
             
             # 4. Ensure essential columns exist (fill with None if missing)
             essential_cols = [
-                "Company", "Sector", "Industry", "Price", "Div Yield", "5Y Avg Yield", 
-                "Current Div", "Annualized", "DGR 1Y", "DGR 3Y", "DGR 5Y", 
-                "DGR 10Y", "TTR 1Y", "TTR 3Y", "Chowder Number", "PEG", "P/E"
+                "Company", "Sector", "Industry", "No Years", "Price", "Div Yield", "5Y Avg Yield", 
+                "Current Div", "Payouts/ Year", "Annualized", "Low", "High", "DGR 1Y", "DGR 3Y", "DGR 5Y", 
+                "DGR 10Y", "TTR 1Y", "TTR 3Y", "Fair Value", "FV %", "Chowder Number", "EPS 1Y", 
+                "Revenue 1Y", "NPM", "CF/Share", "ROE", "Debt/Capital", "ROTC", "P/E", "P/BV", "PEG"
             ]
             for col in essential_cols:
                 if col not in data:
