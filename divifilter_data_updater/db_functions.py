@@ -132,6 +132,10 @@ class MysqlConnection:
         Returns:
             list: List of tickers.
         """
+        # Check if the 'dividend_data_table' exists; if not, return an empty list
+        if not inspect(self.conn).has_table("dividend_data_table"):
+            return []
+
         # Create a SQL query to select all distinct tickers from the table
         query = "SELECT DISTINCT Symbol FROM dividend_data_table;"
 
