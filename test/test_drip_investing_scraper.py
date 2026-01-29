@@ -5,6 +5,27 @@ from divifilter_data_updater.drip_investing_scraper import DripInvestingScraper
 
 class TestDripInvestingScraper(unittest.TestCase):
 
+    def test_clean_numeric_value(self):
+        scraper = DripInvestingScraper()
+        
+        # Test percentage
+        self.assertEqual(scraper.clean_numeric_value('2.49%'), 2.49)
+        
+        # Test dollar amount
+        self.assertEqual(scraper.clean_numeric_value('$150.00'), 150.0)
+        
+        # Test with commas and M suffix
+        self.assertEqual(scraper.clean_numeric_value('$34,005.3M'), 34005.3)
+        
+        # Test with x suffix (for P/E ratios)
+        self.assertEqual(scraper.clean_numeric_value('40.8x'), 40.8)
+        
+        # Test N/A values
+        self.assertIsNone(scraper.clean_numeric_value('N/A'))
+        self.assertIsNone(scraper.clean_numeric_value(None))
+        self.assertIsNone(scraper.clean_numeric_value(''))
+        self.assertIsNone(scraper.clean_numeric_value('-'))
+
     @patch('divifilter_data_updater.drip_investing_scraper.requests.Session')
     def test_get_tickers(self, mock_session):
         # Mock HTML response
@@ -54,6 +75,10 @@ class TestDripInvestingScraper(unittest.TestCase):
                 <span class="data-label">DGR 5Y</span>
                 <span class="data-value">5.2%</span>
             </div>
+            <div class="data-row">
+                <span class="data-label">P/E</span>
+                <span class="data-value">40.8x</span>
+            </div>
         </html>
         '''
         
@@ -70,11 +95,23 @@ class TestDripInvestingScraper(unittest.TestCase):
         self.assertEqual(data['Symbol'], 'JNJ')
         self.assertEqual(data['Company'], 'Johnson & Johnson')
         self.assertEqual(data['Sector'], 'Healthcare')
-        self.assertEqual(data['Price'], '$209.04')
-        self.assertEqual(data['Div Yield'], '2.49%')
-        self.assertEqual(data['DGR 5Y'], '5.2%')
+        
+        # Verify numeric fields are converted to float
+        self.assertEqual(data['Price'], 209.04)
+        self.assertIsInstance(data['Price'], float)
+        
+        self.assertEqual(data['Div Yield'], 2.49)
+        self.assertIsInstance(data['Div Yield'], float)
+        
+        self.assertEqual(data['DGR 5Y'], 5.2)
+        self.assertIsInstance(data['DGR 5Y'], float)
+        
+        self.assertEqual(data['P/E'], 40.8)
+        self.assertIsInstance(data['P/E'], float)
+        
         self.assertEqual(data['No Years'], '63')
 
 
 if __name__ == '__main__':
     unittest.main()
+

@@ -56,6 +56,30 @@ class DripInvestingScraper:
             self.logger.error(f"Error fetching tickers: {e}")
             return []
 
+    def clean_numeric_value(self, value):
+        """
+        Cleans a string value and converts it to a numeric type.
+        Handles percentages, dollar signs, commas, and other formatting.
+        Returns None if conversion fails.
+        """
+        if value is None or value == '' or value == 'N/A':
+            return None
+        
+        # Remove common formatting characters
+        cleaned = str(value).strip()
+        cleaned = cleaned.replace('$', '').replace(',', '').replace('M', '').replace('B', '')
+        cleaned = cleaned.replace('%', '').replace('x', '')
+        
+        # Handle special cases
+        if cleaned in ['', '-', 'N/A', 'None']:
+            return None
+        
+        try:
+            # Try to convert to float
+            return float(cleaned)
+        except (ValueError, AttributeError):
+            return None
+
     def get_stock_data(self, stock_info):
         """
         Fetches and parses data for a single stock.
@@ -86,10 +110,6 @@ class DripInvestingScraper:
                     label = get_text_safe(label_elem)
                     value = get_text_safe(value_elem)
                     
-                    # Store raw value, cleaning can happen later or here
-                    # Map known labels to DB columns if needed, or just store as is
-                    # The DB columns match many of these labels exactly or closely
-                    
                     # Handle known mappings
                     if label == "Payouts/Year":
                         data["Payouts/ Year"] = value
@@ -109,8 +129,21 @@ class DripInvestingScraper:
                 if match:
                     data["No Years"] = match.group(1)
             
-            # 3. Ensure essential columns exist (fill with None if missing)
-            # This helps avoid KeyErrors later
+            # 3. Clean numeric fields
+            # These fields need to be numeric for filtering/comparison
+            numeric_fields = [
+                "Price", "Div Yield", "5Y Avg Yield", "Current Div", "Annualized",
+                "DGR 1Y", "DGR 3Y", "DGR 5Y", "DGR 10Y", "TTR 1Y", "TTR 3Y",
+                "Chowder Number", "PEG", "P/E", "P/BV", "ROE", "NPM", "ROTC",
+                "Debt/Capital", "CF/Share", "Revenue 1Y", "EPS 1Y",
+                "High", "Low", "Payout Ratio", "Market Cap"
+            ]
+            
+            for field in numeric_fields:
+                if field in data:
+                    data[field] = self.clean_numeric_value(data[field])
+            
+            # 4. Ensure essential columns exist (fill with None if missing)
             essential_cols = [
                 "Company", "Sector", "Industry", "Price", "Div Yield", "5Y Avg Yield", 
                 "Current Div", "Annualized", "DGR 1Y", "DGR 3Y", "DGR 5Y", 
@@ -125,6 +158,7 @@ class DripInvestingScraper:
         except Exception as e:
             self.logger.error(f"Error processing {symbol}: {e}")
             return None
+
 
     def scrape_all_data(self):
         """
