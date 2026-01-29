@@ -1,14 +1,23 @@
 from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer, Float, text, select, inspect
 import pandas as pd
+import math
 
 
 class MysqlConnection:
 
     def __init__(self, uri_string: str):
         # check due to pymsql requiring changes to the URI string that are often forgetten
+        if not uri_string:
+            raise ValueError("MYSQL_URI must be set in configurations or environment variables")
+            
         if "pymysql" not in uri_string:
             uri_string = uri_string.replace("mysql", "mysql+pymysql", 1)
-        self.engine = create_engine(uri_string, echo=False)
+            
+        connect_args = {}
+        if "aivencloud.com" in uri_string:
+            connect_args['ssl'] = {'ssl_mode': 'REQUIRED'}
+            
+        self.engine = create_engine(uri_string, connect_args=connect_args, echo=False)
         self.conn = self.engine.connect()
         self.meta = MetaData()
         self.dividend_update_times = Table(
@@ -72,19 +81,20 @@ class MysqlConnection:
 
                 # Construct the SQL update statement dynamically based on columns with data
                 if value is not None:
-                    if isinstance(value, (int, float)):
+                    if isinstance(value, (int, float)) and not math.isnan(value):
                         update_sql = f"""
                             UPDATE dividend_data_table
                             SET `{column_name}` = COALESCE({value}, `{column_name}`)
                             WHERE Symbol = '{symbol}';
                         """
-                    else:
+                        self.run_sql_query(update_sql)
+                    elif isinstance(value, str):
                         update_sql = f"""
                             UPDATE dividend_data_table
                             SET `{column_name}` = COALESCE('{value}', `{column_name}`)
                             WHERE Symbol = '{symbol}';
                         """
-                    self.run_sql_query(update_sql)
+                        self.run_sql_query(update_sql)
 
     def create_dividend_data_table(self):
         """
