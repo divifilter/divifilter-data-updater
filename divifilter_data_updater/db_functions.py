@@ -136,7 +136,26 @@ class MysqlConnection:
             Column('P/E', Float),
             Column('P/BV', Float),
             Column('PEG', Float),
-            Column('Industry', String(255))
+            Column('Industry', String(255)),
+            Column('Website', String(255)),
+            Column('Market Cap', Float),
+            Column('Price Change', String(32)),
+            Column('Price Change %', String(32)),
+            Column('Next Earnings Report', String(64)),
+            Column('Previous Div', String(32)),
+            Column('Ex-date', String(32)),
+            Column('Dividend Pay Date', String(32)),
+            Column('TTR 1Y - With Specials', String(32)),
+            Column('TTR 3Y - With Specials', String(32)),
+            Column('TTR 1Y - No Specials', String(32)),
+            Column('TTR 3Y - No Specials', String(32)),
+            Column('Fair Value (P/E 10)', String(32)),
+            Column('FV (P/E 10) %', String(32)),
+            Column('Fair Value (Peter Lynch)', String(32)),
+            Column('FV (Peter Lynch) %', String(32)),
+            Column('Current R', String(32)),
+            Column('TTR 1Y', String(32)),
+            Column('TTR 3Y', String(32))
         )
 
         if not inspect(self.conn).has_table("dividend_data_table"):
