@@ -137,6 +137,17 @@ class DripInvestingScraper:
                         data["Fair Value"] = value
                     elif label == "FV (Blended) %":
                         data["FV %"] = value
+                    elif label == "TTR 1Y - With Specials":
+                        data["TTR 1Y"] = value
+                    elif label == "TTR 3Y - With Specials":
+                        data["TTR 3Y"] = value
+                    elif label == "TTR 1Y - No Specials":
+                        # If we already got TTR 1Y from With Specials, keep it or prioritizing
+                        if "TTR 1Y" not in data or data["TTR 1Y"] is None:
+                            data["TTR 1Y"] = value
+                    elif label == "TTR 3Y - No Specials":
+                        if "TTR 3Y" not in data or data["TTR 3Y"] is None:
+                            data["TTR 3Y"] = value
                     else:
                         data[label] = value
 

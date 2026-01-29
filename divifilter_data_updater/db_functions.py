@@ -33,6 +33,7 @@ class MysqlConnection:
             'Price': Float,
             'Div Yield': Float,
             '5Y Avg Yield': Float,
+            'Current Div': Float,
             'Annualized': Float,
             'Low': Float,
             'High': Float,
@@ -40,7 +41,10 @@ class MysqlConnection:
             'DGR 3Y': Float,
             'DGR 5Y': Float,
             'DGR 10Y': Float,
+            'TTR 1Y': Float,
+            'TTR 3Y': Float,
             'FV %': Float,
+            'Fair Value': Float,
             'Chowder Number': Float,
             'EPS 1Y': Float,
             'Revenue 1Y': Float,
@@ -51,7 +55,8 @@ class MysqlConnection:
             'ROTC': Float,
             'P/E': Float,
             'P/BV': Float,
-            'PEG': Float
+            'PEG': Float,
+            'Market Cap': Float
         }
         data_table_to_update.to_sql("dividend_data_table", con=self.engine, if_exists="replace", index=False, dtype=dtype_map)
 
