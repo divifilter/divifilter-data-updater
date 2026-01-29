@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from divifilter_data_updater.drip_investing_scraper import DripInvestingScraper
+from divifilter_data_updater.helper_functions import clean_numeric_value
 
 
 class TestDripInvestingScraper(unittest.TestCase):
@@ -9,22 +10,22 @@ class TestDripInvestingScraper(unittest.TestCase):
         scraper = DripInvestingScraper()
         
         # Test percentage
-        self.assertEqual(scraper.clean_numeric_value('2.49%'), 2.49)
+        self.assertEqual(clean_numeric_value('2.49%'), 2.49)
         
         # Test dollar amount
-        self.assertEqual(scraper.clean_numeric_value('$150.00'), 150.0)
+        self.assertEqual(clean_numeric_value('$150.00'), 150.0)
         
         # Test with commas and M suffix
-        self.assertEqual(scraper.clean_numeric_value('$34,005.3M'), 34005.3)
+        self.assertEqual(clean_numeric_value('$34,005.3M'), 34005.3)
         
         # Test with x suffix (for P/E ratios)
-        self.assertEqual(scraper.clean_numeric_value('40.8x'), 40.8)
+        self.assertEqual(clean_numeric_value('40.8x'), 40.8)
         
         # Test N/A values
-        self.assertIsNone(scraper.clean_numeric_value('N/A'))
-        self.assertIsNone(scraper.clean_numeric_value(None))
-        self.assertIsNone(scraper.clean_numeric_value(''))
-        self.assertIsNone(scraper.clean_numeric_value('-'))
+        self.assertIsNone(clean_numeric_value('N/A'))
+        self.assertIsNone(clean_numeric_value(None))
+        self.assertIsNone(clean_numeric_value(''))
+        self.assertIsNone(clean_numeric_value('-'))
 
     @patch('divifilter_data_updater.drip_investing_scraper.requests.Session')
     def test_get_tickers(self, mock_session):
