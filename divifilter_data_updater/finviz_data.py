@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import finviz
 from retrying import retry
 import requests
+from divifilter_data_updater.helper_functions import clean_numeric_value
 
 
 @retry(wait_exponential_multiplier=250, wait_exponential_max=1000, stop_max_attempt_number=3)
@@ -38,6 +39,10 @@ def get_finviz_data_for_tickers_tuple(tickers_list: tuple) -> tuple[datetime, di
                     filtered_radar_dict[stock_ticker][wanted_stock_key] = stock[wanted_stock_value]
                 except KeyError:
                     pass
+                
+                # Clean numeric values
+                if wanted_stock_key in filtered_radar_dict[stock_ticker]:
+                    filtered_radar_dict[stock_ticker][wanted_stock_key] = clean_numeric_value(filtered_radar_dict[stock_ticker][wanted_stock_key])
         except requests.exceptions.HTTPError:
             pass
 

@@ -46,3 +46,27 @@ def random_delay(max_delay_time: int):
     delay_time = random.randint(0, max_delay_time)
     print("will now sleep for " + str(delay_time) + " seconds")
     time.sleep(delay_time)
+
+def clean_numeric_value(value):
+    """
+    Cleans a string value and converts it to a numeric type.
+    Handles percentages, dollar signs, commas, and other formatting.
+    Returns None if conversion fails.
+    """
+    if value is None or value == '' or value == 'N/A':
+        return None
+
+    # Remove common formatting characters
+    cleaned = str(value).strip()
+    cleaned = cleaned.replace('$', '').replace(',', '').replace('M', '').replace('B', '')
+    cleaned = cleaned.replace('%', '').replace('x', '')
+
+    # Handle special cases
+    if cleaned in ['', '-', 'N/A', 'None']:
+        return None
+
+    try:
+        # Try to convert to float
+        return float(cleaned)
+    except (ValueError, AttributeError):
+        return None

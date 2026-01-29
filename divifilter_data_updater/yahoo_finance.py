@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import requests
 import logging
 import json
+from divifilter_data_updater.helper_functions import clean_numeric_value
 
 
 
@@ -48,6 +49,7 @@ def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[date
                         filtered_radar_dict[stock_ticker][wanted_stock_key] = dot_ticker.info[wanted_stock_value]
                     except KeyError:
                         pass
+                
             except AttributeError:
                 pass
             except TypeError:
@@ -56,6 +58,10 @@ def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[date
                 pass
             except json.decoder.JSONDecodeError:
                 pass
+            
+            # Clean numeric values
+            if wanted_stock_key in filtered_radar_dict[stock_ticker]:
+                filtered_radar_dict[stock_ticker][wanted_stock_key] = clean_numeric_value(filtered_radar_dict[stock_ticker][wanted_stock_key])
     yahoo_finance_query_date_time = datetime.now(timezone.utc)
     return yahoo_finance_query_date_time, filtered_radar_dict
 

@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import re
 from concurrent.futures import ThreadPoolExecutor
 import logging
+from divifilter_data_updater.helper_functions import clean_numeric_value
 
 class DripInvestingScraper:
     BASE_URL = "https://www.dripinvesting.org"
@@ -94,29 +95,6 @@ class DripInvestingScraper:
         return all_tickers
 
 
-    def clean_numeric_value(self, value):
-        """
-        Cleans a string value and converts it to a numeric type.
-        Handles percentages, dollar signs, commas, and other formatting.
-        Returns None if conversion fails.
-        """
-        if value is None or value == '' or value == 'N/A':
-            return None
-        
-        # Remove common formatting characters
-        cleaned = str(value).strip()
-        cleaned = cleaned.replace('$', '').replace(',', '').replace('M', '').replace('B', '')
-        cleaned = cleaned.replace('%', '').replace('x', '')
-        
-        # Handle special cases
-        if cleaned in ['', '-', 'N/A', 'None']:
-            return None
-        
-        try:
-            # Try to convert to float
-            return float(cleaned)
-        except (ValueError, AttributeError):
-            return None
 
     def get_stock_data(self, stock_info):
         """
@@ -183,7 +161,7 @@ class DripInvestingScraper:
             
             for field in numeric_fields:
                 if field in data:
-                    data[field] = self.clean_numeric_value(data[field])
+                    data[field] = clean_numeric_value(data[field])
             
             # 4. Ensure essential columns exist (fill with None if missing)
             essential_cols = [
