@@ -27,7 +27,33 @@ class MysqlConnection:
         )
 
     def update_data_table_from_data_frame(self, data_table_to_update: pd.DataFrame):
-        data_table_to_update.to_sql("dividend_data_table", con=self.engine, if_exists="replace", index=False)
+        dtype_map = {
+            'Symbol': String(32),
+            'No Years': Float,
+            'Price': Float,
+            'Div Yield': Float,
+            '5Y Avg Yield': Float,
+            'Annualized': Float,
+            'Low': Float,
+            'High': Float,
+            'DGR 1Y': Float,
+            'DGR 3Y': Float,
+            'DGR 5Y': Float,
+            'DGR 10Y': Float,
+            'FV %': Float,
+            'Chowder Number': Float,
+            'EPS 1Y': Float,
+            'Revenue 1Y': Float,
+            'NPM': Float,
+            'CF/Share': Float,
+            'ROE': Float,
+            'Debt/Capital': Float,
+            'ROTC': Float,
+            'P/E': Float,
+            'P/BV': Float,
+            'PEG': Float
+        }
+        data_table_to_update.to_sql("dividend_data_table", con=self.engine, if_exists="replace", index=False, dtype=dtype_map)
 
     def update_metadata_table(self, time_dict_to_update: dict):
         self.meta.create_all(self.conn, tables=[self.dividend_update_times])
