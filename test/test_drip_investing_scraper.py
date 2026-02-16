@@ -114,6 +114,62 @@ class TestDripInvestingScraper(unittest.TestCase):
         self.assertIsInstance(data['No Years'], float) # Note: clean_numeric_value returns float
 
 
+class TestScrapeAllData(unittest.TestCase):
+
+    @patch('divifilter_data_updater.drip_investing_scraper.requests.Session')
+    def test_all_succeed(self, mock_session):
+        scraper = DripInvestingScraper(max_workers=2)
+        tickers = [
+            {"symbol": "AAPL", "url": "http://example.com/aapl"},
+            {"symbol": "MSFT", "url": "http://example.com/msft"},
+        ]
+        with patch.object(scraper, 'get_tickers', return_value=tickers), \
+             patch.object(scraper, 'get_stock_data', side_effect=[
+                 {"Symbol": "AAPL", "Price": 150.0},
+                 {"Symbol": "MSFT", "Price": 300.0},
+             ]):
+            result = scraper.scrape_all_data()
+            self.assertEqual(len(result), 2)
+
+    @patch('divifilter_data_updater.drip_investing_scraper.requests.Session')
+    def test_some_failures(self, mock_session):
+        scraper = DripInvestingScraper(max_workers=2)
+        tickers = [
+            {"symbol": "AAPL", "url": "http://example.com/aapl"},
+            {"symbol": "BAD", "url": "http://example.com/bad"},
+            {"symbol": "MSFT", "url": "http://example.com/msft"},
+        ]
+        with patch.object(scraper, 'get_tickers', return_value=tickers), \
+             patch.object(scraper, 'get_stock_data', side_effect=[
+                 {"Symbol": "AAPL", "Price": 150.0},
+                 None,
+                 {"Symbol": "MSFT", "Price": 300.0},
+             ]):
+            result = scraper.scrape_all_data()
+            self.assertEqual(len(result), 2)
+
+    @patch('divifilter_data_updater.drip_investing_scraper.requests.Session')
+    def test_all_failures(self, mock_session):
+        scraper = DripInvestingScraper(max_workers=2)
+        tickers = [
+            {"symbol": "BAD1", "url": "http://example.com/bad1"},
+            {"symbol": "BAD2", "url": "http://example.com/bad2"},
+        ]
+        with patch.object(scraper, 'get_tickers', return_value=tickers), \
+             patch.object(scraper, 'get_stock_data', return_value=None):
+            result = scraper.scrape_all_data()
+            self.assertEqual(len(result), 0)
+
+    @patch('divifilter_data_updater.drip_investing_scraper.requests.Session')
+    def test_no_tickers(self, mock_session):
+        scraper = DripInvestingScraper(max_workers=2)
+        with patch.object(scraper, 'get_tickers', return_value=[]), \
+             patch.object(scraper, 'get_stock_data') as mock_get_data:
+            result = scraper.scrape_all_data()
+            self.assertEqual(len(result), 0)
+            mock_get_data.assert_not_called()
+
+
 if __name__ == '__main__':
     unittest.main()
 
