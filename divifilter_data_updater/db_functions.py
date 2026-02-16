@@ -63,9 +63,13 @@ class MysqlConnection:
     def update_metadata_table(self, time_dict_to_update: dict):
         self.meta.create_all(self.conn, tables=[self.dividend_update_times])
         for timestamp_key, timestamp_value in time_dict_to_update.items():
-            self.run_sql_query("INSERT INTO dividend_update_times (name, last_update_time) VALUES ('" + timestamp_key +
-                               "', '" + timestamp_value + "') ON DUPLICATE KEY UPDATE last_update_time = '"
-                               + timestamp_value + "';")
+            query = text(
+                "INSERT INTO dividend_update_times (name, last_update_time) "
+                "VALUES (:name, :update_time) "
+                "ON DUPLICATE KEY UPDATE last_update_time = :update_time"
+            )
+            self.conn.execute(query, {"name": timestamp_key, "update_time": timestamp_value})
+            self.conn.commit()
 
     def run_sql_query(self, sql_query):
         query = text(sql_query)
@@ -110,22 +114,24 @@ class MysqlConnection:
                 if not self.column_exists("dividend_data_table", column_name):
                     self.add_column_to_table("dividend_data_table", column_name)
 
-                # Construct the SQL update statement dynamically based on columns with data
+                # Update cell with parameterized query
                 if value is not None:
                     if isinstance(value, (int, float)) and not math.isnan(value):
-                        update_sql = f"""
-                            UPDATE dividend_data_table
-                            SET `{column_name}` = COALESCE({value}, `{column_name}`)
-                            WHERE Symbol = '{symbol}';
-                        """
-                        self.run_sql_query(update_sql)
+                        query = text(
+                            f"UPDATE dividend_data_table "
+                            f"SET `{column_name}` = COALESCE(:val, `{column_name}`) "
+                            f"WHERE Symbol = :symbol"
+                        )
+                        self.conn.execute(query, {"val": value, "symbol": symbol})
+                        self.conn.commit()
                     elif isinstance(value, str):
-                        update_sql = f"""
-                            UPDATE dividend_data_table
-                            SET `{column_name}` = COALESCE('{value}', `{column_name}`)
-                            WHERE Symbol = '{symbol}';
-                        """
-                        self.run_sql_query(update_sql)
+                        query = text(
+                            f"UPDATE dividend_data_table "
+                            f"SET `{column_name}` = COALESCE(:val, `{column_name}`) "
+                            f"WHERE Symbol = :symbol"
+                        )
+                        self.conn.execute(query, {"val": value, "symbol": symbol})
+                        self.conn.commit()
 
     def create_dividend_data_table(self):
         """
