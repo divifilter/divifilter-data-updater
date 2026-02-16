@@ -34,7 +34,7 @@ def init():
                 
                 # Filter columns if needed (scraper already selects relevant data, but we can ensure cleanup)
                 # The previous unneeded_columns might not apply to new data keys, but keeping clean
-                unneeded_columns = ["FV", "None", None, "Ex-Date", "Pay-Date"] 
+                unneeded_columns = ["FV", "None", None, "Ex-Date", "Pay-Date", "Website", "EPS 1Y"]
                 # Note: "Current R", "New Member" etc might not exist in new data
                 
                 radar_dict_filtered = remove_unneeded_columns(radar_dict, unneeded_columns)
