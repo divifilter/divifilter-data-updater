@@ -1,6 +1,9 @@
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 import re
+import threading
 from concurrent.futures import ThreadPoolExecutor
 import logging
 from divifilter_data_updater.helper_functions import clean_numeric_value
@@ -11,12 +14,26 @@ class DripInvestingScraper:
 
     def __init__(self, max_workers=10):
         self.max_workers = max_workers
-        self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-        })
+        self._thread_local = threading.local()
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
+
+    def _get_session(self):
+        if not hasattr(self._thread_local, 'session'):
+            session = requests.Session()
+            session.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            })
+            retry_strategy = Retry(
+                total=3,
+                backoff_factor=1,
+                status_forcelist=[429, 500, 502, 503, 504],
+            )
+            adapter = HTTPAdapter(max_retries=retry_strategy)
+            session.mount("http://", adapter)
+            session.mount("https://", adapter)
+            self._thread_local.session = session
+        return self._thread_local.session
 
     def get_tickers(self):
         """
@@ -37,7 +54,7 @@ class DripInvestingScraper:
             self.logger.info(f"Fetching tickers from page {page}: {url}")
             
             try:
-                response = self.session.get(url)
+                response = self._get_session().get(url)
                 
                 # If we get a 404, we might have reached the end (though usually it just returns empty or same page)
                 if response.status_code == 404:
@@ -104,7 +121,7 @@ class DripInvestingScraper:
         url = stock_info["url"]
         
         try:
-            response = self.session.get(url, timeout=10)
+            response = self._get_session().get(url, timeout=30)
             if response.status_code != 200:
                 self.logger.warning(f"Failed to fetch data for {symbol}: {response.status_code}")
                 return None
@@ -201,14 +218,19 @@ class DripInvestingScraper:
         
         self.logger.info(f"Starting scrape for {len(tickers)} stocks with {self.max_workers} threads...")
         
+        failed_tickers = []
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            results = executor.map(self.get_stock_data, tickers)
-            
-            for res in results:
-                if res:
+            results = list(executor.map(self.get_stock_data, tickers))
+
+            for ticker_info, res in zip(tickers, results):
+                if res is not None:
                     all_data.append(res)
-        
-        self.logger.info(f"Scraping complete. Collected data for {len(all_data)} stocks.")
+                else:
+                    failed_tickers.append(ticker_info['symbol'])
+
+        if failed_tickers:
+            self.logger.warning(f"Failed to scrape {len(failed_tickers)} tickers: {failed_tickers}")
+        self.logger.info(f"Scraping complete. Collected data for {len(all_data)}/{len(tickers)} stocks.")
         return all_data
 
 if __name__ == "__main__":
