@@ -174,7 +174,6 @@ class MysqlConnection:
             Column('P/BV', Float),
             Column('PEG', Float),
             Column('Industry', String(255)),
-            Column('Website', String(255)),
             Column('Market Cap', Float),
             Column('Price Change', String(32)),
             Column('Price Change %', String(32)),
