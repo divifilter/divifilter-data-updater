@@ -36,6 +36,8 @@ class TestInit(unittest.TestCase):
             {"Symbol": "AAPL", "Price": 150.0},
         ]
         mysql = mock_mysql_cls.return_value
+        mysql.__enter__ = MagicMock(return_value=mysql)
+        mysql.__exit__ = MagicMock(return_value=False)
 
         with patch('divifilter_data_updater.divifilter_data_updater_runner.disable_yahoo_logs') as mock_disable, \
              patch('divifilter_data_updater.divifilter_data_updater_runner.get_yahoo_finance_data_for_tickers_list') as mock_yahoo:
@@ -60,6 +62,8 @@ class TestInit(unittest.TestCase):
         scraper = mock_scraper_cls.return_value
         scraper.scrape_all_data.return_value = []
         mysql = mock_mysql_cls.return_value
+        mysql.__enter__ = MagicMock(return_value=mysql)
+        mysql.__exit__ = MagicMock(return_value=False)
 
         with self.assertRaises(BreakLoop):
             from divifilter_data_updater.divifilter_data_updater_runner import init
@@ -73,6 +77,8 @@ class TestInit(unittest.TestCase):
         scraper = mock_scraper_cls.return_value
         scraper.scrape_all_data.side_effect = Exception("network error")
         mysql = mock_mysql_cls.return_value
+        mysql.__enter__ = MagicMock(return_value=mysql)
+        mysql.__exit__ = MagicMock(return_value=False)
 
         with self.assertRaises(BreakLoop):
             from divifilter_data_updater.divifilter_data_updater_runner import init
@@ -89,6 +95,8 @@ class TestInit(unittest.TestCase):
         scraper = mock_scraper_cls.return_value
         scraper.scrape_all_data.return_value = []
         mysql = mock_mysql_cls.return_value
+        mysql.__enter__ = MagicMock(return_value=mysql)
+        mysql.__exit__ = MagicMock(return_value=False)
 
         with patch('divifilter_data_updater.divifilter_data_updater_runner.get_yahoo_finance_data_for_tickers_list') as mock_yahoo:
             with self.assertRaises(BreakLoop):
@@ -102,6 +110,9 @@ class TestInit(unittest.TestCase):
         mock_config.return_value = _default_config(disable_yahoo_logs=True)
         scraper = mock_scraper_cls.return_value
         scraper.scrape_all_data.return_value = []
+        mysql = mock_mysql_cls.return_value
+        mysql.__enter__ = MagicMock(return_value=mysql)
+        mysql.__exit__ = MagicMock(return_value=False)
 
         with patch('divifilter_data_updater.divifilter_data_updater_runner.disable_yahoo_logs') as mock_disable:
             with self.assertRaises(BreakLoop):
@@ -114,6 +125,9 @@ class TestInit(unittest.TestCase):
         mock_config.return_value = _default_config(disable_yahoo_logs=False)
         scraper = mock_scraper_cls.return_value
         scraper.scrape_all_data.return_value = []
+        mysql = mock_mysql_cls.return_value
+        mysql.__enter__ = MagicMock(return_value=mysql)
+        mysql.__exit__ = MagicMock(return_value=False)
 
         with patch('divifilter_data_updater.divifilter_data_updater_runner.disable_yahoo_logs') as mock_disable:
             with self.assertRaises(BreakLoop):

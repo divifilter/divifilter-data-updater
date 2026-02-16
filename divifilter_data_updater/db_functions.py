@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer, Float, text, select, inspect
 import pandas as pd
 import math
+import re
 
 
 class MysqlConnection:
@@ -25,6 +26,17 @@ class MysqlConnection:
             Column('name', String(32), primary_key=True, unique=True),
             Column('last_update_time', String(32))
         )
+
+    def close(self):
+        self.conn.close()
+        self.engine.dispose()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
 
     def update_data_table_from_data_frame(self, data_table_to_update: pd.DataFrame):
         dtype_map = {
@@ -86,51 +98,64 @@ class MysqlConnection:
         data_dict = dict(self.conn.execute(select(self.dividend_update_times)).fetchall())
         return data_dict
 
+    @staticmethod
+    def _safe_param_name(column_name):
+        """Convert column name to a safe SQL parameter name."""
+        return re.sub(r'[^a-zA-Z0-9_]', '_', column_name)
+
     def update_data_table(self, finviz_data: tuple):
         """
-        Update the 'dividend_data_table' with data obtained from Finviz for a list of tickers.
+        Update the 'dividend_data_table' with enrichment data (Yahoo/Finviz).
+        Batches column checks and per-ticker UPDATEs for performance.
 
         Args:
             finviz_data (tuple): Tuple containing a timestamp and a dictionary of data for tickers.
-
-        Returns:
-            None
         """
         # Check if the 'dividend_data_table' exists; if not, create it
         if not self.engine.dialect.has_table(self.conn, "dividend_data_table"):
             self.create_dividend_data_table()
 
-        # Ensure that finviz_data is a tuple with the expected structure
         if not (isinstance(finviz_data, tuple) and len(finviz_data) == 2):
             raise ValueError("finviz_data must be a tuple containing a timestamp and a dictionary")
 
         timestamp, ticker_data = finviz_data
 
-        # Iterate through the ticker data and update rows in the database
-        for symbol, data in ticker_data.items():
-            # Check if the columns exist in the table; if not, create them
-            for column_name, value in data.items():
-                if not self.column_exists("dividend_data_table", column_name):
-                    self.add_column_to_table("dividend_data_table", column_name)
+        if not ticker_data:
+            return
 
-                # Update cell with parameterized query
-                if value is not None:
-                    if isinstance(value, (int, float)) and not math.isnan(value):
-                        query = text(
-                            f"UPDATE dividend_data_table "
-                            f"SET `{column_name}` = COALESCE(:val, `{column_name}`) "
-                            f"WHERE Symbol = :symbol"
-                        )
-                        self.conn.execute(query, {"val": value, "symbol": symbol})
-                        self.conn.commit()
-                    elif isinstance(value, str):
-                        query = text(
-                            f"UPDATE dividend_data_table "
-                            f"SET `{column_name}` = COALESCE(:val, `{column_name}`) "
-                            f"WHERE Symbol = :symbol"
-                        )
-                        self.conn.execute(query, {"val": value, "symbol": symbol})
-                        self.conn.commit()
+        # 1. Collect all column names and add missing ones in one pass
+        all_columns = set()
+        for data in ticker_data.values():
+            all_columns.update(data.keys())
+
+        existing_columns = {col['name'] for col in inspect(self.engine).get_columns("dividend_data_table")}
+        for col in all_columns - existing_columns:
+            self.add_column_to_table("dividend_data_table", col)
+
+        # 2. Batch update: one UPDATE per ticker instead of per cell
+        for symbol, data in ticker_data.items():
+            updates = {}
+            for col, val in data.items():
+                if val is None:
+                    continue
+                if isinstance(val, (int, float)) and math.isnan(val):
+                    continue
+                updates[col] = val
+
+            if not updates:
+                continue
+
+            set_clauses = ", ".join(
+                f"`{col}` = COALESCE(:{self._safe_param_name(col)}, `{col}`)"
+                for col in updates
+            )
+            params = {self._safe_param_name(col): val for col, val in updates.items()}
+            params["symbol"] = symbol
+
+            query = text(f"UPDATE dividend_data_table SET {set_clauses} WHERE Symbol = :symbol")
+            self.conn.execute(query, params)
+
+        self.conn.commit()
 
     def create_dividend_data_table(self):
         """

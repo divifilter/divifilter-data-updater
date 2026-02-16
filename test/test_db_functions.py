@@ -53,6 +53,22 @@ class TestMysqlConnectionInit(unittest.TestCase):
 
 
 @patch('divifilter_data_updater.db_functions.create_engine')
+class TestCloseAndContextManager(unittest.TestCase):
+
+    def test_close_disposes_engine_and_connection(self, mock_create_engine):
+        conn = MysqlConnection("mysql://user:pass@host/db")
+        conn.close()
+        conn.conn.close.assert_called_once()
+        conn.engine.dispose.assert_called_once()
+
+    def test_context_manager(self, mock_create_engine):
+        with MysqlConnection("mysql://user:pass@host/db") as conn:
+            self.assertIsNotNone(conn.engine)
+        conn.conn.close.assert_called_once()
+        conn.engine.dispose.assert_called_once()
+
+
+@patch('divifilter_data_updater.db_functions.create_engine')
 class TestUpdateDataTableFromDataFrame(unittest.TestCase):
 
     def test_calls_to_sql_with_correct_args(self, mock_create_engine):
@@ -185,16 +201,15 @@ class TestUpdateDataTable(unittest.TestCase):
     def test_creates_missing_columns(self, mock_create_engine, mock_inspect):
         conn = MysqlConnection("mysql://user:pass@host/db")
         conn.engine.dialect.has_table.return_value = True
+        # No existing columns, so NewCol should be added
         mock_inspect.return_value.get_columns.return_value = []
 
         from datetime import datetime
         data = (datetime.now(), {"AAPL": {"NewCol": 42.0}})
 
-        with patch.object(conn, 'run_sql_query') as mock_run:
+        with patch.object(conn, 'add_column_to_table') as mock_add:
             conn.update_data_table(data)
-            alter_calls = [c for c in mock_run.call_args_list
-                           if 'ALTER TABLE' in str(c)]
-            self.assertTrue(len(alter_calls) > 0)
+            mock_add.assert_called_once_with("dividend_data_table", "NewCol")
 
     def test_creates_table_if_not_exists(self, mock_create_engine, mock_inspect):
         conn = MysqlConnection("mysql://user:pass@host/db")
