@@ -74,14 +74,33 @@ class MysqlConnection:
 
         with self.engine.connect() as conn:
             main_exists = self.engine.dialect.has_table(conn, "dividend_data_table")
-            if main_exists:
-                conn.execute(text(
-                    "RENAME TABLE dividend_data_table TO dividend_data_table_old, "
-                    f"{staging_table} TO dividend_data_table"
-                ))
-                conn.execute(text("DROP TABLE dividend_data_table_old"))
-            else:
+            if not main_exists:
+                # First run: rename (nothing reading yet)
                 conn.execute(text(f"RENAME TABLE {staging_table} TO dividend_data_table"))
+            else:
+                staging_cols = [col['name'] for col in inspect(self.engine).get_columns(staging_table)]
+                main_cols = {col['name'] for col in inspect(self.engine).get_columns("dividend_data_table")}
+
+                # Add any new columns to main (rare; ALTER is brief)
+                for col in staging_cols:
+                    if col not in main_cols:
+                        conn.execute(text(f"ALTER TABLE `dividend_data_table` ADD COLUMN `{col}` TEXT"))
+
+                col_list = ", ".join(f"`{c}`" for c in staging_cols)
+                update_clause = ", ".join(
+                    f"`{c}` = VALUES(`{c}`)" for c in staging_cols if c != 'Symbol'
+                )
+                conn.execute(text(
+                    f"INSERT INTO `dividend_data_table` ({col_list}) "
+                    f"SELECT {col_list} FROM `{staging_table}` "
+                    f"ON DUPLICATE KEY UPDATE {update_clause}"
+                ))
+                conn.execute(text(
+                    f"DELETE m FROM `dividend_data_table` m "
+                    f"LEFT JOIN `{staging_table}` s ON m.Symbol = s.Symbol "
+                    f"WHERE s.Symbol IS NULL"
+                ))
+                conn.execute(text(f"DROP TABLE `{staging_table}`"))
             conn.commit()
 
     def update_metadata_table(self, time_dict_to_update: dict):

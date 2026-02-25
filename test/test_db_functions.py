@@ -68,12 +68,14 @@ class TestCloseAndContextManager(unittest.TestCase):
         conn.engine.dispose.assert_called_once()
 
 
+@patch('divifilter_data_updater.db_functions.inspect')
 @patch('divifilter_data_updater.db_functions.create_engine')
 class TestUpdateDataTableFromDataFrame(unittest.TestCase):
 
-    def test_calls_to_sql_with_correct_args(self, mock_create_engine):
+    def test_calls_to_sql_with_correct_args(self, mock_create_engine, mock_inspect):
         conn = MysqlConnection("mysql://user:pass@host/db")
         df = pd.DataFrame({"Symbol": ["AAPL"], "Price": [150.0]})
+        mock_inspect.return_value.get_columns.return_value = []
         with patch.object(pd.DataFrame, 'to_sql') as mock_to_sql:
             conn.update_data_table_from_data_frame(df)
             mock_to_sql.assert_called_once()
@@ -83,9 +85,10 @@ class TestUpdateDataTableFromDataFrame(unittest.TestCase):
             self.assertEqual(kwargs['index'], False)
             self.assertIn('Symbol', kwargs['dtype'])
 
-    def test_dtype_map_has_all_expected_keys(self, mock_create_engine):
+    def test_dtype_map_has_all_expected_keys(self, mock_create_engine, mock_inspect):
         conn = MysqlConnection("mysql://user:pass@host/db")
         df = pd.DataFrame()
+        mock_inspect.return_value.get_columns.return_value = []
         expected_keys = {
             'Symbol', 'No Years', 'Price', 'Div Yield', '5Y Avg Yield',
             'Current Div', 'Annualized', 'Low', 'High', 'DGR 1Y', 'DGR 3Y',
@@ -98,12 +101,61 @@ class TestUpdateDataTableFromDataFrame(unittest.TestCase):
             dtype = mock_to_sql.call_args[1]['dtype']
             self.assertEqual(set(dtype.keys()), expected_keys)
 
-    def test_empty_dataframe_no_crash(self, mock_create_engine):
+    def test_empty_dataframe_no_crash(self, mock_create_engine, mock_inspect):
         conn = MysqlConnection("mysql://user:pass@host/db")
         df = pd.DataFrame()
+        mock_inspect.return_value.get_columns.return_value = []
         with patch.object(pd.DataFrame, 'to_sql') as mock_to_sql:
             conn.update_data_table_from_data_frame(df)
             mock_to_sql.assert_called_once()
+
+    def test_first_run_uses_rename(self, mock_create_engine, mock_inspect):
+        """First run (no main table): rename staging → main, no DML."""
+        conn = MysqlConnection("mysql://user:pass@host/db")
+        df = pd.DataFrame({"Symbol": ["AAPL"], "Price": [150.0]})
+        conn.engine.dialect.has_table.return_value = False
+        with patch.object(pd.DataFrame, 'to_sql'):
+            conn.update_data_table_from_data_frame(df)
+
+        inner_conn = conn.engine.connect.return_value.__enter__.return_value
+        sqls = [str(c[0][0]) for c in inner_conn.execute.call_args_list]
+        self.assertTrue(any("RENAME TABLE" in s for s in sqls))
+        self.assertFalse(any("INSERT INTO" in s for s in sqls))
+        self.assertFalse(any("DELETE" in s for s in sqls))
+
+    def test_subsequent_run_uses_dml_merge(self, mock_create_engine, mock_inspect):
+        """Subsequent run (main table exists): UPSERT + DELETE, no RENAME."""
+        conn = MysqlConnection("mysql://user:pass@host/db")
+        df = pd.DataFrame({"Symbol": ["AAPL", "MSFT"], "Price": [150.0, 300.0]})
+        conn.engine.dialect.has_table.return_value = True
+        cols = [{'name': 'Symbol'}, {'name': 'Price'}]
+        mock_inspect.return_value.get_columns.return_value = cols
+
+        with patch.object(pd.DataFrame, 'to_sql'):
+            conn.update_data_table_from_data_frame(df)
+
+        inner_conn = conn.engine.connect.return_value.__enter__.return_value
+        sqls = [str(c[0][0]) for c in inner_conn.execute.call_args_list]
+        self.assertFalse(any("RENAME TABLE" in s for s in sqls))
+        self.assertTrue(any("INSERT INTO" in s and "ON DUPLICATE KEY UPDATE" in s for s in sqls))
+        self.assertTrue(any("DELETE" in s and "LEFT JOIN" in s for s in sqls))
+        self.assertTrue(any("DROP TABLE" in s for s in sqls))
+
+    def test_subsequent_run_adds_new_columns(self, mock_create_engine, mock_inspect):
+        """Columns in staging but missing from main trigger ALTER TABLE before merge."""
+        conn = MysqlConnection("mysql://user:pass@host/db")
+        df = pd.DataFrame({"Symbol": ["AAPL"], "Price": [150.0], "NewCol": ["x"]})
+        conn.engine.dialect.has_table.return_value = True
+        staging_cols = [{'name': 'Symbol'}, {'name': 'Price'}, {'name': 'NewCol'}]
+        main_cols = [{'name': 'Symbol'}, {'name': 'Price'}]
+        mock_inspect.return_value.get_columns.side_effect = [staging_cols, main_cols]
+
+        with patch.object(pd.DataFrame, 'to_sql'):
+            conn.update_data_table_from_data_frame(df)
+
+        inner_conn = conn.engine.connect.return_value.__enter__.return_value
+        sqls = [str(c[0][0]) for c in inner_conn.execute.call_args_list]
+        self.assertTrue(any("ALTER TABLE" in s and "NewCol" in s for s in sqls))
 
 
 @patch('divifilter_data_updater.db_functions.create_engine')
