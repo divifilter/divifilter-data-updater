@@ -78,7 +78,7 @@ class TestUpdateDataTableFromDataFrame(unittest.TestCase):
             conn.update_data_table_from_data_frame(df)
             mock_to_sql.assert_called_once()
             args, kwargs = mock_to_sql.call_args
-            self.assertEqual(args[0], "dividend_data_table")
+            self.assertEqual(args[0], "dividend_data_table_staging")
             self.assertEqual(kwargs['if_exists'], "replace")
             self.assertEqual(kwargs['index'], False)
             self.assertIn('Symbol', kwargs['dtype'])

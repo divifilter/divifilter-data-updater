@@ -69,7 +69,20 @@ class MysqlConnection:
             'PEG': Float,
             'Market Cap': Float
         }
-        data_table_to_update.to_sql("dividend_data_table", con=self.engine, if_exists="replace", index=False, dtype=dtype_map)
+        staging_table = "dividend_data_table_staging"
+        data_table_to_update.to_sql(staging_table, con=self.engine, if_exists="replace", index=False, dtype=dtype_map)
+
+        with self.engine.connect() as conn:
+            main_exists = self.engine.dialect.has_table(conn, "dividend_data_table")
+            if main_exists:
+                conn.execute(text(
+                    "RENAME TABLE dividend_data_table TO dividend_data_table_old, "
+                    f"{staging_table} TO dividend_data_table"
+                ))
+                conn.execute(text("DROP TABLE dividend_data_table_old"))
+            else:
+                conn.execute(text(f"RENAME TABLE {staging_table} TO dividend_data_table"))
+            conn.commit()
 
     def update_metadata_table(self, time_dict_to_update: dict):
         self.meta.create_all(self.conn, tables=[self.dividend_update_times])
