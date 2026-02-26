@@ -73,11 +73,23 @@ class MysqlConnection:
         data_table_to_update.to_sql(staging_table, con=self.engine, if_exists="replace", index=False, dtype=dtype_map)
 
         with self.engine.connect() as conn:
+            # Ensure staging table has a primary key on Symbol for ON DUPLICATE KEY UPDATE
+            conn.execute(text(f"ALTER TABLE `{staging_table}` ADD PRIMARY KEY (`Symbol`)"))
+
             main_exists = self.engine.dialect.has_table(conn, "dividend_data_table")
             if not main_exists:
                 # First run: rename (nothing reading yet)
                 conn.execute(text(f"RENAME TABLE {staging_table} TO dividend_data_table"))
             else:
+                # Ensure main table has a primary key on Symbol (fix for tables created without one)
+                result = conn.execute(text("SHOW KEYS FROM `dividend_data_table` WHERE Key_name = 'PRIMARY'"))
+                if not result.fetchone():
+                    # Table has no PK, likely has duplicates. Drop and replace with staging.
+                    conn.execute(text("DROP TABLE `dividend_data_table`"))
+                    conn.execute(text(f"RENAME TABLE `{staging_table}` TO `dividend_data_table`"))
+                    conn.commit()
+                    return
+
                 staging_cols = [col['name'] for col in inspect(self.engine).get_columns(staging_table)]
                 main_cols = {col['name'] for col in inspect(self.engine).get_columns("dividend_data_table")}
 
