@@ -141,6 +141,45 @@ class TestUpdateDataTableFromDataFrame(unittest.TestCase):
         self.assertTrue(any("DELETE" in s and "LEFT JOIN" in s for s in sqls))
         self.assertTrue(any("DROP TABLE" in s for s in sqls))
 
+    def test_staging_table_gets_primary_key(self, mock_create_engine, mock_inspect):
+        """ALTER TABLE staging ADD PRIMARY KEY (Symbol) runs on every call."""
+        conn = MysqlConnection("mysql://user:pass@host/db")
+        df = pd.DataFrame({"Symbol": ["AAPL"], "Price": [150.0]})
+        mock_inspect.return_value.get_columns.return_value = []
+        with patch.object(pd.DataFrame, 'to_sql'):
+            conn.update_data_table_from_data_frame(df)
+
+        inner_conn = conn.engine.connect.return_value.__enter__.return_value
+        sqls = [str(c[0][0]) for c in inner_conn.execute.call_args_list]
+        self.assertTrue(any("ADD PRIMARY KEY" in s and "staging" in s for s in sqls))
+
+    def test_subsequent_run_without_primary_key_replaces_table(self, mock_create_engine, mock_inspect):
+        """Legacy main table without PK: drop and replace with staging."""
+        conn = MysqlConnection("mysql://user:pass@host/db")
+        df = pd.DataFrame({"Symbol": ["AAPL"], "Price": [150.0]})
+        conn.engine.dialect.has_table.return_value = True
+
+        inner_conn = conn.engine.connect.return_value.__enter__.return_value
+
+        def execute_side_effect(stmt, *args, **kwargs):
+            sql_str = str(stmt)
+            if "SHOW KEYS" in sql_str:
+                mock_result = MagicMock()
+                mock_result.fetchone.return_value = None
+                return mock_result
+            return MagicMock()
+
+        inner_conn.execute.side_effect = execute_side_effect
+
+        with patch.object(pd.DataFrame, 'to_sql'):
+            conn.update_data_table_from_data_frame(df)
+
+        sqls = [str(c[0][0]) for c in inner_conn.execute.call_args_list]
+        self.assertTrue(any("DROP TABLE" in s and "dividend_data_table" in s for s in sqls))
+        self.assertTrue(any("RENAME TABLE" in s for s in sqls))
+        self.assertFalse(any("INSERT INTO" in s for s in sqls))
+        inner_conn.commit.assert_called()
+
     def test_subsequent_run_adds_new_columns(self, mock_create_engine, mock_inspect):
         """Columns in staging but missing from main trigger ALTER TABLE before merge."""
         conn = MysqlConnection("mysql://user:pass@host/db")
