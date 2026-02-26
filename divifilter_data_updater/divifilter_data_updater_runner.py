@@ -42,6 +42,7 @@ def init():
 
             except Exception as e:
                 print(f"Error during update: {e}")
+                mysql_connection.conn.rollback()
 
             # always updated, just update all tickers and then update the timetable with yahoo & finviz update date to be later
             # also shown to enduser if it does not find that data in finviz fallback to yahoo and if not just keep what in the

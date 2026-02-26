@@ -87,6 +87,24 @@ class TestInit(unittest.TestCase):
         # Exception is caught, DB write not called
         mysql.update_data_table_from_data_frame.assert_not_called()
 
+    def test_scraper_exception_rolls_back_connection(self, mock_config, mock_scraper_cls,
+                                                      mock_mysql_cls, mock_datetime, mock_delay):
+        """After a scrape error, rollback so Yahoo scraping can still use the connection."""
+        mock_config.return_value = _default_config(scrape_yahoo_finance=True)
+        scraper = mock_scraper_cls.return_value
+        scraper.scrape_all_data.side_effect = Exception("network error")
+        mysql = mock_mysql_cls.return_value
+        mysql.__enter__ = MagicMock(return_value=mysql)
+        mysql.__exit__ = MagicMock(return_value=False)
+
+        with patch('divifilter_data_updater.divifilter_data_updater_runner.get_yahoo_finance_data_for_tickers_list'):
+            with self.assertRaises(BreakLoop):
+                from divifilter_data_updater.divifilter_data_updater_runner import init
+                init()
+
+        mysql.conn.rollback.assert_called_once()
+        mysql.get_tickers_from_db.assert_called_once()
+
     def test_yahoo_disabled(self, mock_config, mock_scraper_cls,
                              mock_mysql_cls, mock_datetime, mock_delay):
         mock_config.return_value = _default_config(
