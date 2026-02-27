@@ -82,6 +82,10 @@ coverage report
 
 Supported Python versions: 3.10, 3.11, 3.12
 
+## Related Projects
+
+- [divifilter-ui](https://github.com/divifilter/divifilter-ui) — The web UI that displays the data harvested by this pipeline.
+
 ## License
 
 [LGPL-3.0](LICENSE)
