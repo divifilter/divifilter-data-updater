@@ -52,4 +52,4 @@ python update_divifilter_data.py
 
 ## CI/CD
 
-Push to `main` triggers: lint → test (Python 3.10-3.12) → Docker build (amd64/arm64) → push to DockerHub → deploy to Northflank. PRs only run lint + tests.
+Push to `main` triggers: lint → test (Python 3.12-3.14) → Docker build (amd64/arm64) → push to DockerHub → deploy to Northflank. PRs only run lint + tests.
