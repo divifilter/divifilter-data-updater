@@ -94,7 +94,8 @@ class TestUpdateDataTableFromDataFrame(unittest.TestCase):
             'Current Div', 'Annualized', 'Low', 'High', 'DGR 1Y', 'DGR 3Y',
             'DGR 5Y', 'DGR 10Y', 'TTR 1Y', 'TTR 3Y', 'FV %', 'Fair Value',
             'Chowder Number', 'Revenue 1Y', 'NPM', 'CF/Share', 'ROE',
-            'Debt/Capital', 'ROTC', 'P/E', 'P/BV', 'PEG', 'Market Cap'
+            'Debt/Capital', 'ROTC', 'P/E', 'P/BV', 'PEG', 'Market Cap',
+            'Payout Ratio'
         }
         with patch.object(pd.DataFrame, 'to_sql') as mock_to_sql:
             conn.update_data_table_from_data_frame(df)

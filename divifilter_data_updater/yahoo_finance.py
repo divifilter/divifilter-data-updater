@@ -62,6 +62,9 @@ def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[date
             # Clean numeric values
             if wanted_stock_key in filtered_radar_dict[stock_ticker]:
                 filtered_radar_dict[stock_ticker][wanted_stock_key] = clean_numeric_value(filtered_radar_dict[stock_ticker][wanted_stock_key])
+                # Yahoo returns payoutRatio as a fraction (0.65); drip scrape stores it as a percent (65.0). Normalize to percent.
+                if wanted_stock_key == "Payout Ratio" and filtered_radar_dict[stock_ticker][wanted_stock_key] is not None:
+                    filtered_radar_dict[stock_ticker][wanted_stock_key] *= 100
     yahoo_finance_query_date_time = datetime.now(timezone.utc)
     return yahoo_finance_query_date_time, filtered_radar_dict
 

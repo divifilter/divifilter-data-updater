@@ -67,7 +67,8 @@ class MysqlConnection:
             'P/E': Float,
             'P/BV': Float,
             'PEG': Float,
-            'Market Cap': Float
+            'Market Cap': Float,
+            'Payout Ratio': Float
         }
         staging_table = "dividend_data_table_staging"
         data_table_to_update.to_sql(staging_table, con=self.engine, if_exists="replace", index=False, dtype=dtype_map)
@@ -242,6 +243,7 @@ class MysqlConnection:
             Column('PEG', Float),
             Column('Industry', String(255)),
             Column('Market Cap', Float),
+            Column('Payout Ratio', Float),
             Column('Price Change', String(32)),
             Column('Price Change %', String(32)),
             Column('Next Earnings Report', String(64)),

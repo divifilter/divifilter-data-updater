@@ -26,7 +26,7 @@ class TestScrapersCleaning(unittest.TestCase):
         self.assertEqual(reply["PG"]["Low"], 12000.0) # comma is removed, so 120,00 becomes 12000
         self.assertEqual(reply["PG"]["High"], 160.0)
         self.assertEqual(reply["PG"]["P/BV"], 5.5)
-        self.assertEqual(reply["PG"]["Payout Ratio"], 0.65)
+        self.assertEqual(reply["PG"]["Payout Ratio"], 65.0)
 
     @patch('divifilter_data_updater.finviz_data.finviz.get_stock')
     def test_finviz_cleaning(self, mock_get_stock):
