@@ -38,6 +38,14 @@ class TestHelperFunctions(unittest.TestCase):
         self.assertIsNone(clean_numeric_value("abc"))
         self.assertIsNone(clean_numeric_value("1.2.3"))
 
+    def test_clean_numeric_value_rounds_to_two_decimals(self):
+        self.assertEqual(clean_numeric_value("123.456"), 123.46)
+        self.assertEqual(clean_numeric_value("123.454"), 123.45)
+        self.assertEqual(clean_numeric_value("1,234.5678"), 1234.57)
+        self.assertEqual(clean_numeric_value(123.456789), 123.46)
+        self.assertEqual(clean_numeric_value("$99.999"), 100.0)
+        self.assertEqual(clean_numeric_value("5.678%"), 5.68)
+
 class TestRadarDictToTable(unittest.TestCase):
 
     def test_multi_ticker_dict(self):

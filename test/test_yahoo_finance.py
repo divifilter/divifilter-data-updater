@@ -82,6 +82,25 @@ class TestYahooFinance(unittest.TestCase):
         self.assertEqual(reply["PG"]["Price"], 150.0)
         self.assertEqual(reply["SCL"]["Price"], 75.0)
 
+    @patch('divifilter_data_updater.yahoo_finance.yf.Tickers')
+    def test_payout_ratio_preserves_precision(self, mock_tickers):
+        # Yahoo returns payoutRatio as a fraction; we need the *100 conversion
+        # to happen before rounding so 0.6523 becomes 65.23, not 65.0.
+        mock_ticker = MagicMock()
+        mock_ticker.info = {
+            'currentPrice': 10.0,
+            'fiftyTwoWeekLow': 5.0,
+            'fiftyTwoWeekHigh': 15.0,
+            'priceToBook': 1.0,
+            'payoutRatio': 0.6523,
+        }
+        mock_tickers_instance = MagicMock()
+        mock_tickers_instance.tickers = {'PG': mock_ticker}
+        mock_tickers.return_value = mock_tickers_instance
+
+        _, reply = get_yahoo_finance_data_for_tickers_tuple(("PG",))
+        self.assertEqual(reply["PG"]["Payout Ratio"], 65.23)
+
     def test_disable_yahoo_logs(self):
         # Test that disable_yahoo_logs doesn't raise an error
         disable_yahoo_logs()
