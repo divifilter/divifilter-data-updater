@@ -12,7 +12,7 @@ class DripInvestingScraper:
     BASE_URL = "https://www.dripinvesting.org"
     STOCKS_URL = "https://www.dripinvesting.org/stocks/"
 
-    def __init__(self, max_workers=10):
+    def __init__(self, max_workers=4):
         self.max_workers = max_workers
         self._thread_local = threading.local()
         logging.basicConfig(level=logging.INFO)
@@ -235,7 +235,7 @@ class DripInvestingScraper:
 
 if __name__ == "__main__":
     # Simple test run
-    scraper = DripInvestingScraper(max_workers=5)
+    scraper = DripInvestingScraper(max_workers=4)
     tickers = scraper.get_tickers()
     print(f"Found {len(tickers)} tickers")
     if tickers:
