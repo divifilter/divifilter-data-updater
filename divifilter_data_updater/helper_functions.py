@@ -66,7 +66,6 @@ def clean_numeric_value(value):
         return None
 
     try:
-        # Try to convert to float
-        return float(cleaned)
+        return round(float(cleaned), 2)
     except (ValueError, AttributeError):
         return None
