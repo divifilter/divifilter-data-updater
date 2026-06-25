@@ -15,8 +15,8 @@ class TestDripInvestingScraper(unittest.TestCase):
         # Test dollar amount
         self.assertEqual(clean_numeric_value('$150.00'), 150.0)
         
-        # Test with commas and M suffix
-        self.assertEqual(clean_numeric_value('$34,005.3M'), 34005.3)
+        # Test with commas and M suffix (M is a magnitude suffix and must be scaled)
+        self.assertEqual(clean_numeric_value('$34,005.3M'), 34005300000.0)
         
         # Test with x suffix (for P/E ratios)
         self.assertEqual(clean_numeric_value('40.8x'), 40.8)

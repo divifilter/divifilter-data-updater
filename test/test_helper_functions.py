@@ -22,10 +22,18 @@ class TestHelperFunctions(unittest.TestCase):
         self.assertEqual(clean_numeric_value("5.5%"), 5.5)
         self.assertEqual(clean_numeric_value("0.65%"), 0.65)
 
-    def test_clean_numeric_value_abbreviations(self):
-        self.assertEqual(clean_numeric_value("1.5M"), 1.5)
-        self.assertEqual(clean_numeric_value("2.3B"), 2.3)
+    def test_clean_numeric_value_magnitude_suffixes_are_scaled(self):
+        # K/M/B/T are magnitude suffixes and must be scaled, not just stripped.
+        self.assertEqual(clean_numeric_value("1.5M"), 1500000.0)
+        self.assertEqual(clean_numeric_value("2.3B"), 2300000000.0)
+        self.assertEqual(clean_numeric_value("850M"), 850000000.0)
+        self.assertEqual(clean_numeric_value("1.2T"), 1200000000000.0)
+        self.assertEqual(clean_numeric_value("12.5K"), 12500.0)
+
+    def test_clean_numeric_value_x_marker_is_a_plain_unit(self):
+        # 'x' marks a ratio (P/E etc.) and is just a unit, not a magnitude.
         self.assertEqual(clean_numeric_value("15x"), 15.0)
+        self.assertEqual(clean_numeric_value("56.8x"), 56.8)
 
     def test_clean_numeric_value_empty_none(self):
         self.assertIsNone(clean_numeric_value(""))

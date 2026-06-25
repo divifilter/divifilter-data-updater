@@ -54,8 +54,8 @@ class DripInvestingScraper:
             self.logger.info(f"Fetching tickers from page {page}: {url}")
             
             try:
-                response = self._get_session().get(url)
-                
+                response = self._get_session().get(url, timeout=30)
+
                 # If we get a 404, we might have reached the end (though usually it just returns empty or same page)
                 if response.status_code == 404:
                     self.logger.info(f"Reached end of pagination at page {page} (404)")

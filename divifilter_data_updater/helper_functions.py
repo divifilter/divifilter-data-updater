@@ -47,25 +47,38 @@ def random_delay(max_delay_time: int):
     print("will now sleep for " + str(delay_time) + " seconds")
     time.sleep(delay_time)
 
+# Magnitude suffixes used for large numbers (e.g. Market Cap "1.5B"). These must
+# be scaled, not just stripped, otherwise "1.5B" becomes 1.5 instead of 1.5e9.
+_MAGNITUDE_MULTIPLIERS = {'K': 1e3, 'M': 1e6, 'B': 1e9, 'T': 1e12}
+
+
 def clean_numeric_value(value):
     """
     Cleans a string value and converts it to a numeric type.
-    Handles percentages, dollar signs, commas, and other formatting.
+    Handles percentages, dollar signs, commas, the 'x' multiple marker (P/E etc.),
+    and scales magnitude suffixes (K/M/B/T) used for large numbers like Market Cap.
     Returns None if conversion fails.
     """
     if value is None or value == '' or value == 'N/A':
         return None
 
-    # Remove common formatting characters
+    # Remove formatting characters: currency, thousands separators, percent, and the
+    # 'x' marker used for ratios. Magnitude suffixes (K/M/B/T) are handled separately
+    # below so they can be scaled rather than discarded.
     cleaned = str(value).strip()
-    cleaned = cleaned.replace('$', '').replace(',', '').replace('M', '').replace('B', '')
-    cleaned = cleaned.replace('%', '').replace('x', '')
+    cleaned = cleaned.replace('$', '').replace(',', '').replace('%', '')
+    cleaned = cleaned.replace('x', '').replace('X', '').strip()
 
     # Handle special cases
     if cleaned in ['', '-', 'N/A', 'None']:
         return None
 
+    multiplier = 1
+    if cleaned[-1].upper() in _MAGNITUDE_MULTIPLIERS:
+        multiplier = _MAGNITUDE_MULTIPLIERS[cleaned[-1].upper()]
+        cleaned = cleaned[:-1].strip()
+
     try:
-        return round(float(cleaned), 2)
+        return round(float(cleaned) * multiplier, 2)
     except (ValueError, AttributeError):
         return None

@@ -41,7 +41,7 @@ class MysqlConnection:
     def update_data_table_from_data_frame(self, data_table_to_update: pd.DataFrame):
         dtype_map = {
             'Symbol': String(32),
-            'No Years': Float,
+            'No Years': Integer,
             'Price': Float,
             'Div Yield': Float,
             '5Y Avg Yield': Float,

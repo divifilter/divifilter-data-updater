@@ -4,6 +4,27 @@ from divifilter_data_updater.helper_functions import *
 from divifilter_data_updater.db_functions import *
 from divifilter_data_updater.yahoo_finance import *
 from divifilter_data_updater.finviz_data import *
+import time
+
+
+def _connect_with_retry(mysql_uri, max_attempts=5, base_delay=1, max_delay=30):
+    """
+    Acquire a MysqlConnection, retrying with bounded exponential backoff so a
+    transient DB outage at connect time doesn't crash the whole process.
+
+    Raises the last exception if every attempt fails.
+    """
+    attempt = 1
+    while True:
+        try:
+            return MysqlConnection(mysql_uri)
+        except Exception as e:
+            if attempt >= max_attempts:
+                raise
+            delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
+            print(f"Database connection attempt {attempt}/{max_attempts} failed: {e}; retrying in {delay}s")
+            time.sleep(delay)
+            attempt += 1
 
 
 def init():
@@ -16,7 +37,14 @@ def init():
         if configuration["disable_yahoo_logs"] is True:
             disable_yahoo_logs()
 
-        with MysqlConnection(configuration["mysql_uri"]) as mysql_connection:
+        try:
+            database_connection = _connect_with_retry(configuration["mysql_uri"])
+        except Exception as e:
+            print(f"Could not connect to the database, will retry next cycle: {e}")
+            random_delay(configuration["max_random_delay_seconds"])
+            continue
+
+        with database_connection as mysql_connection:
             try:
                 print("Starting scrape from DripInvesting.org...")
                 # Scrape data
