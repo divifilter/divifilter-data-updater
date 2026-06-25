@@ -16,6 +16,7 @@ from divifilter_data_updater.yahoo_finance import (
     get_yahoo_finance_data_for_tickers_list,
     disable_yahoo_logs,
 )
+from divifilter_data_updater.health import write_heartbeat
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,9 @@ def init():
 
     while not _stop_event.is_set():
         configuration = read_configurations()
+
+        # Liveness heartbeat for the Docker healthcheck (detects a hung loop).
+        write_heartbeat(configuration["max_random_delay_seconds"])
 
         scraper = DripInvestingScraper(
             max_workers=configuration["scrape_max_workers"],
