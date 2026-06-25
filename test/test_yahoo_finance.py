@@ -1,7 +1,12 @@
 import unittest
+import logging
 from unittest.mock import patch, MagicMock
 from datetime import datetime
-from divifilter_data_updater.yahoo_finance import *
+from divifilter_data_updater.yahoo_finance import (
+    get_yahoo_finance_data_for_tickers_tuple,
+    get_yahoo_finance_data_for_tickers_list,
+    disable_yahoo_logs,
+)
 
 
 class TestYahooFinance(unittest.TestCase):

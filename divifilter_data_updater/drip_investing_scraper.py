@@ -22,7 +22,6 @@ class DripInvestingScraper:
             parsed = urlparse(stocks_url)
             self.BASE_URL = f"{parsed.scheme}://{parsed.netloc}"
         self._thread_local = threading.local()
-        logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 
     def get_dataset_version(self):

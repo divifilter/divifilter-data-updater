@@ -77,44 +77,50 @@ class MysqlConnection:
             # Ensure staging table has a primary key on Symbol for ON DUPLICATE KEY UPDATE
             conn.execute(text(f"ALTER TABLE `{staging_table}` ADD PRIMARY KEY (`Symbol`)"))
 
-            main_exists = self.engine.dialect.has_table(conn, "dividend_data_table")
-            if not main_exists:
+            if not self.engine.dialect.has_table(conn, "dividend_data_table"):
                 # First run: rename (nothing reading yet)
                 conn.execute(text(f"RENAME TABLE {staging_table} TO dividend_data_table"))
             else:
-                # Ensure main table has a primary key on Symbol (fix for tables created without one)
-                result = conn.execute(text("SHOW KEYS FROM `dividend_data_table` WHERE Key_name = 'PRIMARY'"))
-                if not result.fetchone():
-                    # Table has no PK, likely has duplicates. Drop and replace with staging.
-                    conn.execute(text("DROP TABLE `dividend_data_table`"))
-                    conn.execute(text(f"RENAME TABLE `{staging_table}` TO `dividend_data_table`"))
-                    conn.commit()
-                    return
-
-                staging_cols = [col['name'] for col in inspect(self.engine).get_columns(staging_table)]
-                main_cols = {col['name'] for col in inspect(self.engine).get_columns("dividend_data_table")}
-
-                # Add any new columns to main (rare; ALTER is brief)
-                for col in staging_cols:
-                    if col not in main_cols:
-                        conn.execute(text(f"ALTER TABLE `dividend_data_table` ADD COLUMN `{col}` TEXT"))
-
-                col_list = ", ".join(f"`{c}`" for c in staging_cols)
-                update_clause = ", ".join(
-                    f"`{c}` = VALUES(`{c}`)" for c in staging_cols if c != 'Symbol'
-                )
-                conn.execute(text(
-                    f"INSERT INTO `dividend_data_table` ({col_list}) "
-                    f"SELECT {col_list} FROM `{staging_table}` "
-                    f"ON DUPLICATE KEY UPDATE {update_clause}"
-                ))
-                conn.execute(text(
-                    f"DELETE m FROM `dividend_data_table` m "
-                    f"LEFT JOIN `{staging_table}` s ON m.Symbol = s.Symbol "
-                    f"WHERE s.Symbol IS NULL"
-                ))
-                conn.execute(text(f"DROP TABLE `{staging_table}`"))
+                self._merge_staging_into_main(conn, staging_table)
             conn.commit()
+
+    def _merge_staging_into_main(self, conn, staging_table):
+        """
+        Merge the freshly-built staging table into the existing main table:
+        upsert rows, drop rows no longer present, and add any new columns first.
+        Handles the legacy case of a main table created without a primary key.
+        """
+        # Ensure main table has a primary key on Symbol (fix for tables created without one)
+        result = conn.execute(text("SHOW KEYS FROM `dividend_data_table` WHERE Key_name = 'PRIMARY'"))
+        if not result.fetchone():
+            # Table has no PK, likely has duplicates. Drop and replace with staging.
+            conn.execute(text("DROP TABLE `dividend_data_table`"))
+            conn.execute(text(f"RENAME TABLE `{staging_table}` TO `dividend_data_table`"))
+            return
+
+        staging_cols = [col['name'] for col in inspect(self.engine).get_columns(staging_table)]
+        main_cols = {col['name'] for col in inspect(self.engine).get_columns("dividend_data_table")}
+
+        # Add any new columns to main (rare; ALTER is brief)
+        for col in staging_cols:
+            if col not in main_cols:
+                conn.execute(text(f"ALTER TABLE `dividend_data_table` ADD COLUMN `{col}` TEXT"))
+
+        col_list = ", ".join(f"`{c}`" for c in staging_cols)
+        update_clause = ", ".join(
+            f"`{c}` = VALUES(`{c}`)" for c in staging_cols if c != 'Symbol'
+        )
+        conn.execute(text(
+            f"INSERT INTO `dividend_data_table` ({col_list}) "
+            f"SELECT {col_list} FROM `{staging_table}` "
+            f"ON DUPLICATE KEY UPDATE {update_clause}"
+        ))
+        conn.execute(text(
+            f"DELETE m FROM `dividend_data_table` m "
+            f"LEFT JOIN `{staging_table}` s ON m.Symbol = s.Symbol "
+            f"WHERE s.Symbol IS NULL"
+        ))
+        conn.execute(text(f"DROP TABLE `{staging_table}`"))
 
     def update_metadata_table(self, time_dict_to_update: dict):
         self.meta.create_all(self.conn, tables=[self.dividend_update_times])
@@ -130,7 +136,7 @@ class MysqlConnection:
     def run_sql_query(self, sql_query):
         query = text(sql_query)
         result = self.conn.execute(query)
-        if "SELECT" in query.text.upper():
+        if query.text.lstrip().upper().startswith("SELECT"):
             data = result.fetchall()
         else:
             data = None

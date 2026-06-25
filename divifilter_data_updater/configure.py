@@ -1,18 +1,22 @@
+import logging
+
 from parse_it import ParseIt
+
+logger = logging.getLogger(__name__)
 
 
 def read_configurations(config_folder: str = "config") -> dict:
     """
-    Will create a config dict that includes all of the configurations for terraformize by aggregating from all valid
-    config sources (files, envvars, cli args, etc) & using sane defaults on config params that are not declared
+    Will create a config dict that includes all of the configurations for the data updater by aggregating from all
+    valid config sources (files, envvars, cli args, etc) & using sane defaults on config params that are not declared
 
     Arguments:
         :param config_folder: the folder which all configuration file will be read from recursively
 
     Returns:
-        :return config: a dict of all configurations needed for terraformize to work
+        :return config: a dict of all configurations needed for the data updater to work
     """
-    print("reading config variables")
+    logger.info("reading config variables")
 
     config = {}
     parser = ParseIt(config_location=config_folder, recurse=True)

@@ -8,6 +8,8 @@ import logging
 import json
 from divifilter_data_updater.helper_functions import clean_numeric_value
 
+logger = logging.getLogger(__name__)
+
 
 
 @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_attempt_number=10)
@@ -48,16 +50,11 @@ def get_yahoo_finance_data_for_tickers_tuple(tickers_tuple: tuple) -> tuple[date
                     try:
                         filtered_radar_dict[stock_ticker][wanted_stock_key] = dot_ticker.info[wanted_stock_value]
                     except KeyError:
-                        pass
-                
-            except AttributeError:
-                pass
-            except TypeError:
-                pass
-            except requests.exceptions.HTTPError:
-                pass
-            except json.decoder.JSONDecodeError:
-                pass
+                        logger.debug("Yahoo has no %s for %s", wanted_stock_value, stock_ticker)
+
+            except (AttributeError, TypeError, requests.exceptions.HTTPError,
+                    json.decoder.JSONDecodeError) as e:
+                logger.debug("Yahoo lookup failed for %s.%s: %s", stock_ticker, wanted_stock_value, e)
             
             # Clean numeric values
             if wanted_stock_key in filtered_radar_dict[stock_ticker]:

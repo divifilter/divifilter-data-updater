@@ -2,6 +2,9 @@ import pandas as pd
 from datetime import datetime
 import random
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def radar_dict_to_table(radar_dict: dict) -> pd.DataFrame:
@@ -37,15 +40,20 @@ def get_current_datetime_string():
     return date_time
 
 
-def random_delay(max_delay_time: int):
+def random_delay(max_delay_time: int, stop_event=None):
     """
     sleep a random amount of time
 
     :param max_delay_time: Max time in seconds it is ok to delay
+    :param stop_event: optional threading.Event; when provided the delay is
+        interruptible and returns early if the event is set (graceful shutdown)
     """
     delay_time = random.randint(0, max_delay_time)
-    print("will now sleep for " + str(delay_time) + " seconds")
-    time.sleep(delay_time)
+    logger.info("will now sleep for %s seconds", delay_time)
+    if stop_event is not None:
+        stop_event.wait(delay_time)
+    else:
+        time.sleep(delay_time)
 
 # Magnitude suffixes used for large numbers (e.g. Market Cap "1.5B"). These must
 # be scaled, not just stripped, otherwise "1.5B" becomes 1.5 instead of 1.5e9.
