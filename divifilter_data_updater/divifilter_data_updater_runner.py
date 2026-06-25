@@ -31,7 +31,10 @@ def init():
     while True:
         configuration = read_configurations()
 
-        scraper = DripInvestingScraper()
+        scraper = DripInvestingScraper(
+            max_workers=configuration["scrape_max_workers"],
+            stocks_url=configuration["dividend_radar_download_url"],
+        )
 
         # disable yahoo spammy logs if set
         if configuration["disable_yahoo_logs"] is True:
@@ -46,27 +49,38 @@ def init():
 
         with database_connection as mysql_connection:
             try:
-                print("Starting scrape from DripInvesting.org...")
-                # Scrape data
-                scraped_data_list = scraper.scrape_all_data()
+                # Only re-scrape DripInvesting.org when it has published a new dataset
+                # (its embedded updated_gmt advances). On unchanged days we skip the
+                # ~800-page scrape entirely; Yahoo price enrichment below still runs.
+                current_version = scraper.get_dataset_version()
+                last_version = mysql_connection.check_db_update_dates().get("drip_updated_gmt")
 
-                if scraped_data_list:
-                    # Convert list to dict format expected by helper functions (ticker -> data)
-                    radar_dict = {item['Symbol']: item for item in scraped_data_list}
-
-                    # Filter columns if needed (scraper already selects relevant data, but we can ensure cleanup)
-                    unneeded_columns = ["FV", "None", None, "Ex-Date", "Pay-Date", "Website", "EPS 1Y"]
-
-                    radar_dict_filtered = remove_unneeded_columns(radar_dict, unneeded_columns)
-
-                    # Convert to dataframe and update DB
-                    mysql_connection.update_data_table_from_data_frame(radar_dict_to_table(radar_dict_filtered))
-
-                    # Update metadata
-                    mysql_connection.update_metadata_table({"radar_file": get_current_datetime_string()})
-                    print("Database updated successfully.")
+                if current_version is not None and current_version == last_version:
+                    print(f"DripInvesting.org dataset unchanged (updated_gmt={current_version}); skipping scrape.")
                 else:
-                    print("No data scraped.")
+                    print("Starting scrape from DripInvesting.org...")
+                    # Scrape data
+                    scraped_data_list = scraper.scrape_all_data()
+
+                    if scraped_data_list:
+                        # Convert list to dict format expected by helper functions (ticker -> data)
+                        radar_dict = {item['Symbol']: item for item in scraped_data_list}
+
+                        # Filter columns if needed (scraper already selects relevant data, but we can ensure cleanup)
+                        unneeded_columns = ["FV", "None", None, "Ex-Date", "Pay-Date", "Website", "EPS 1Y"]
+
+                        radar_dict_filtered = remove_unneeded_columns(radar_dict, unneeded_columns)
+
+                        # Convert to dataframe and update DB
+                        mysql_connection.update_data_table_from_data_frame(radar_dict_to_table(radar_dict_filtered))
+
+                        # Update metadata, including the dataset version we just scraped
+                        mysql_connection.update_metadata_table({"radar_file": get_current_datetime_string()})
+                        if current_version is not None:
+                            mysql_connection.update_metadata_table({"drip_updated_gmt": current_version})
+                        print("Database updated successfully.")
+                    else:
+                        print("No data scraped.")
 
             except Exception as e:
                 print(f"Error during update: {e}")

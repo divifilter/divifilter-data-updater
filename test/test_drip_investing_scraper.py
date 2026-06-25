@@ -51,6 +51,33 @@ class TestDripInvestingScraper(unittest.TestCase):
         self.assertTrue('dividend-history-calculator-returns' in tickers[0]['url'])
 
     @patch('divifilter_data_updater.drip_investing_scraper.requests.Session')
+    def test_get_dataset_version_parses_updated_gmt(self, mock_session):
+        mock_response = MagicMock()
+        mock_response.text = '<script type="application/json">{"showSorting":true,"updated_gmt":"2026-06-24 03:09:53"}</script>'
+        mock_response.status_code = 200
+        mock_session.return_value.get.return_value = mock_response
+
+        scraper = DripInvestingScraper()
+        self.assertEqual(scraper.get_dataset_version(), "2026-06-24 03:09:53")
+
+    @patch('divifilter_data_updater.drip_investing_scraper.requests.Session')
+    def test_get_dataset_version_returns_none_when_absent(self, mock_session):
+        mock_response = MagicMock()
+        mock_response.text = '<html>no version marker here</html>'
+        mock_response.status_code = 200
+        mock_session.return_value.get.return_value = mock_response
+
+        scraper = DripInvestingScraper()
+        self.assertIsNone(scraper.get_dataset_version())
+
+    @patch('divifilter_data_updater.drip_investing_scraper.requests.Session')
+    def test_get_dataset_version_returns_none_on_fetch_error(self, mock_session):
+        mock_session.return_value.get.side_effect = Exception("network down")
+
+        scraper = DripInvestingScraper()
+        self.assertIsNone(scraper.get_dataset_version())
+
+    @patch('divifilter_data_updater.drip_investing_scraper.requests.Session')
     def test_get_stock_data(self, mock_session):
         # Mock HTML response for a stock page
         mock_html = '''

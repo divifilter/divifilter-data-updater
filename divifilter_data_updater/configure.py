@@ -26,4 +26,5 @@ def read_configurations(config_folder: str = "config") -> dict:
     config["scrape_finviz"] = parser.read_configuration_variable("scrape_finviz", default_value=True)
     config["disable_yahoo_logs"] = parser.read_configuration_variable("disable_yahoo_logs", default_value=True)
     config["max_random_delay_seconds"] = parser.read_configuration_variable("max_random_delay_seconds", default_value=3600)
+    config["scrape_max_workers"] = parser.read_configuration_variable("scrape_max_workers", default_value=4)
     return config

@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import re
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urlparse
 import logging
 from divifilter_data_updater.helper_functions import clean_numeric_value
 
@@ -12,11 +13,39 @@ class DripInvestingScraper:
     BASE_URL = "https://www.dripinvesting.org"
     STOCKS_URL = "https://www.dripinvesting.org/stocks/"
 
-    def __init__(self, max_workers=4):
+    def __init__(self, max_workers=4, stocks_url=None):
         self.max_workers = max_workers
+        # Allow the stocks URL to be overridden via config; derive the site root
+        # from it so relative ticker links still resolve correctly.
+        if stocks_url:
+            self.STOCKS_URL = stocks_url
+            parsed = urlparse(stocks_url)
+            self.BASE_URL = f"{parsed.scheme}://{parsed.netloc}"
         self._thread_local = threading.local()
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
+
+    def get_dataset_version(self):
+        """
+        Return DripInvesting.org's published dataset version - the `updated_gmt`
+        timestamp embedded in the stocks index page - or None if it can't be
+        determined. Used to skip the full scrape when the dataset is unchanged.
+
+        Returns None on any fetch/parse failure so callers fail safe toward a
+        full scrape (never skip on uncertainty).
+        """
+        try:
+            response = self._get_session().get(self.STOCKS_URL, timeout=30)
+            response.raise_for_status()
+        except Exception as e:
+            self.logger.warning(f"Could not fetch DripInvesting.org dataset version: {e}")
+            return None
+
+        match = re.search(r'"updated_gmt"\s*:\s*"([^"]+)"', response.text)
+        if not match:
+            self.logger.warning("updated_gmt not found on DripInvesting.org index page")
+            return None
+        return match.group(1)
 
     def _get_session(self):
         if not hasattr(self._thread_local, 'session'):

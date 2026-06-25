@@ -8,6 +8,7 @@ class TestReadConfigurations(unittest.TestCase):
         # Test reading all configurations with default values
         config = read_configurations()
         self.assertEqual(config["dividend_radar_download_url"], "https://www.dripinvesting.org/stocks/")
+        self.assertEqual(config["scrape_max_workers"], 4)
         # local_file_path is now commented out in configure.py
 
     def test_read_configurations_missing_key(self):
