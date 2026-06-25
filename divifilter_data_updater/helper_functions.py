@@ -60,6 +60,38 @@ def random_delay(max_delay_time: int, stop_event=None):
 _MAGNITUDE_MULTIPLIERS = {'K': 1e3, 'M': 1e6, 'B': 1e9, 'T': 1e12}
 
 
+# Conservative sanity bounds (low, high); None means unbounded on that side.
+# Values outside these are treated as obviously-bad data and nulled before persist.
+_VALIDATION_BOUNDS = {
+    "Price": (0, None),          # a real stock price is positive
+    "Div Yield": (0, 100),       # a yield above 100% is a data glitch
+    "5Y Avg Yield": (0, 100),
+}
+
+
+def validate_radar_data(radar_dict: dict) -> dict:
+    """
+    Null out implausible numeric values in-place (conservative bounds only) so
+    obviously-bad scraped data doesn't reach the DB. Logs each correction.
+
+    :param radar_dict: ticker -> {column: value} mapping (modified in place)
+    :return radar_dict: the same dict, with out-of-range values set to None
+    """
+    for symbol, record in radar_dict.items():
+        for field, (low, high) in _VALIDATION_BOUNDS.items():
+            value = record.get(field)
+            if value is None:
+                continue
+            try:
+                numeric = float(value)
+            except (ValueError, TypeError):
+                continue
+            if (low is not None and numeric < low) or (high is not None and numeric > high):
+                logger.warning("Dropping out-of-range %s=%s for %s", field, value, symbol)
+                record[field] = None
+    return radar_dict
+
+
 def clean_numeric_value(value):
     """
     Cleans a string value and converts it to a numeric type.

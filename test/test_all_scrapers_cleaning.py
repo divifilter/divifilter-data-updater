@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from divifilter_data_updater.yahoo_finance import get_yahoo_finance_data_for_tickers_tuple
-from divifilter_data_updater.finviz_data import get_finviz_data_for_tickers_tuple
 from divifilter_data_updater.drip_investing_scraper import DripInvestingScraper
 
 class TestScrapersCleaning(unittest.TestCase):
@@ -27,25 +26,6 @@ class TestScrapersCleaning(unittest.TestCase):
         self.assertEqual(reply["PG"]["High"], 160.0)
         self.assertEqual(reply["PG"]["P/BV"], 5.5)
         self.assertEqual(reply["PG"]["Payout Ratio"], 65.0)
-
-    @patch('divifilter_data_updater.finviz_data.finviz.get_stock')
-    def test_finviz_cleaning(self, mock_get_stock):
-        mock_get_stock.return_value = {
-            'Price': "150.00",
-            'Payout': "65.0%",
-            '52W Low': "120.00",
-            '52W High': "160.00",
-            'P/B': "5.50",
-            'Debt/Eq': "0.45",
-            'ROE': "20.5%",
-            'P/E': "15.0"
-        }
-
-        _, reply = get_finviz_data_for_tickers_tuple(("PG",))
-        
-        self.assertEqual(reply["PG"]["Price"], 150.0)
-        self.assertEqual(reply["PG"]["Payout Ratio"], 65.0)
-        self.assertEqual(reply["PG"]["ROE"], 20.5)
 
     @patch('divifilter_data_updater.drip_investing_scraper.requests.Session.get')
     def test_drip_investing_cleaning(self, mock_get):

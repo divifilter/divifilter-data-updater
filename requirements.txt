@@ -12,7 +12,6 @@ cssselect==1.4.0
 curl_cffi==0.15.0
 dpath==2.2.0
 et_xmlfile==2.0.0
-finviz==2.0.0
 frozendict==2.4.7
 frozenlist==1.8.0
 greenlet==3.5.2

@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 from divifilter_data_updater.helper_functions import (
     clean_numeric_value, radar_dict_to_table, remove_unneeded_columns,
-    get_current_datetime_string, random_delay
+    get_current_datetime_string, random_delay, validate_radar_data
 )
 
 
@@ -53,6 +53,36 @@ class TestHelperFunctions(unittest.TestCase):
         self.assertEqual(clean_numeric_value(123.456789), 123.46)
         self.assertEqual(clean_numeric_value("$99.999"), 100.0)
         self.assertEqual(clean_numeric_value("5.678%"), 5.68)
+
+class TestValidateRadarData(unittest.TestCase):
+
+    def test_nulls_out_of_range_values(self):
+        data = {
+            "AAPL": {"Price": -5.0, "Div Yield": 150.0, "5Y Avg Yield": -2.0},
+        }
+        result = validate_radar_data(data)
+        self.assertIsNone(result["AAPL"]["Price"])        # price must be > 0
+        self.assertIsNone(result["AAPL"]["Div Yield"])    # yield > 100 is bad
+        self.assertIsNone(result["AAPL"]["5Y Avg Yield"])  # yield < 0 is bad
+
+    def test_keeps_in_range_values(self):
+        data = {"AAPL": {"Price": 150.0, "Div Yield": 2.5, "5Y Avg Yield": 3.0}}
+        result = validate_radar_data(data)
+        self.assertEqual(result["AAPL"]["Price"], 150.0)
+        self.assertEqual(result["AAPL"]["Div Yield"], 2.5)
+
+    def test_ignores_none_and_non_numeric(self):
+        data = {"AAPL": {"Price": None, "Div Yield": "n/a"}}
+        result = validate_radar_data(data)
+        self.assertIsNone(result["AAPL"]["Price"])
+        self.assertEqual(result["AAPL"]["Div Yield"], "n/a")  # untouched (not numeric)
+
+    def test_unvalidated_fields_untouched(self):
+        data = {"AAPL": {"P/E": -10.0, "Chowder Number": 999.0}}
+        result = validate_radar_data(data)
+        self.assertEqual(result["AAPL"]["P/E"], -10.0)
+        self.assertEqual(result["AAPL"]["Chowder Number"], 999.0)
+
 
 class TestRadarDictToTable(unittest.TestCase):
 

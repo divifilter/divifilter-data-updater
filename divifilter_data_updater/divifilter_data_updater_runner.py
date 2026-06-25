@@ -10,6 +10,7 @@ from divifilter_data_updater.helper_functions import (
     radar_dict_to_table,
     get_current_datetime_string,
     random_delay,
+    validate_radar_data,
 )
 from divifilter_data_updater.db_functions import MysqlConnection
 from divifilter_data_updater.yahoo_finance import (
@@ -28,6 +29,13 @@ _stop_event = threading.Event()
 def _request_shutdown(signum, _frame):
     logger.info("Received signal %s; will shut down after the current cycle", signum)
     _stop_event.set()
+
+
+def _fmt_age(seconds):
+    """Render an age-in-seconds value for logging, tolerating None/non-numeric."""
+    if not isinstance(seconds, (int, float)):
+        return "unknown"
+    return f"{seconds:.0f}s ago"
 
 
 def _connect_with_retry(mysql_uri, max_attempts=5, base_delay=1, max_delay=30):
@@ -84,6 +92,11 @@ def init():
 
         with database_connection as mysql_connection:
             try:
+                # Surface data freshness so staleness is visible in the logs.
+                logger.info("Data freshness — radar: %s, yahoo: %s",
+                            _fmt_age(mysql_connection.get_update_age_seconds("radar_file")),
+                            _fmt_age(mysql_connection.get_update_age_seconds("yahoo_finance")))
+
                 # Only re-scrape DripInvesting.org when it has published a new dataset
                 # (its embedded updated_gmt advances). On unchanged days we skip the
                 # ~800-page scrape entirely; Yahoo price enrichment below still runs.
@@ -97,8 +110,10 @@ def init():
                     logger.info("Starting scrape from DripInvesting.org...")
                     # Scrape data
                     scraped_data_list = scraper.scrape_all_data()
+                    scraped_count = len(scraped_data_list)
+                    min_expected = configuration["scrape_min_expected_tickers"]
 
-                    if scraped_data_list:
+                    if scraped_count >= min_expected:
                         # Convert list to dict format expected by helper functions (ticker -> data)
                         radar_dict = {item['Symbol']: item for item in scraped_data_list}
 
@@ -107,6 +122,9 @@ def init():
 
                         radar_dict_filtered = remove_unneeded_columns(radar_dict, unneeded_columns)
 
+                        # Null any obviously-bad values before they reach the DB
+                        validate_radar_data(radar_dict_filtered)
+
                         # Convert to dataframe and update DB
                         mysql_connection.update_data_table_from_data_frame(radar_dict_to_table(radar_dict_filtered))
 
@@ -114,7 +132,14 @@ def init():
                         mysql_connection.update_metadata_table({"radar_file": get_current_datetime_string()})
                         if current_version is not None:
                             mysql_connection.update_metadata_table({"drip_updated_gmt": current_version})
-                        logger.info("Database updated successfully.")
+                        logger.info("Database updated successfully (%s stocks).", scraped_count)
+                    elif scraped_count > 0:
+                        # Too few stocks: the DripInvesting.org page shape likely changed.
+                        # Skip the DB replace so we don't wipe good data with a broken scrape.
+                        logger.error(
+                            "Scrape returned only %s stocks (< %s expected); skipping DB update to "
+                            "avoid wiping good data. DripInvesting.org page structure may have changed.",
+                            scraped_count, min_expected)
                     else:
                         logger.warning("No data scraped.")
 
@@ -122,22 +147,14 @@ def init():
                 logger.exception("Error during update: %s", e)
                 mysql_connection.conn.rollback()
 
-            # always updated, just update all tickers and then update the timetable with yahoo & finviz update date to be later
-            # also shown to enduser if it does not find that data in finviz fallback to yahoo and if not just keep what in the
-            # db already
-            if configuration["scrape_yahoo_finance"] is True or configuration["scrape_finviz"] is True:
+            # Enrich every ticker with fresh Yahoo Finance data (prices etc.) and
+            # record when that enrichment ran, so it stays current even on days the
+            # DripInvesting.org scrape is skipped.
+            if configuration["scrape_yahoo_finance"] is True:
                 tickers_list = mysql_connection.get_tickers_from_db()
-
-                if configuration["scrape_yahoo_finance"] is True:
-                    mysql_connection.update_metadata_table({"yahoo_finance": get_current_datetime_string()})
-                    yahoo_data = get_yahoo_finance_data_for_tickers_list(tickers_list)
-                    mysql_connection.update_data_table(yahoo_data)
-
-                # finviz library is currently broken, waiting for it to be fixed upstream
-                # if configuration["scrape_finviz"] is True:
-                #     mysql_connection.update_metadata_table({"finviz": get_current_datetime_string()})
-                #     finviz_data = get_finviz_data_for_tickers_list(tickers_list)
-                #     mysql_connection.update_data_table(finviz_data)
+                mysql_connection.update_metadata_table({"yahoo_finance": get_current_datetime_string()})
+                yahoo_data = get_yahoo_finance_data_for_tickers_list(tickers_list)
+                mysql_connection.update_data_table(yahoo_data)
 
         # add a random delay between runs, if zero there will be none
         random_delay(configuration["max_random_delay_seconds"], stop_event=_stop_event)

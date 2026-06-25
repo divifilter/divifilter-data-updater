@@ -12,10 +12,10 @@ def _default_config(**overrides):
         "mysql_uri": "mysql://user:pass@host/db",
         "dividend_radar_download_url": "https://www.dripinvesting.org/stocks/",
         "scrape_yahoo_finance": False,
-        "scrape_finviz": False,
         "disable_yahoo_logs": False,
         "max_random_delay_seconds": 0,
         "scrape_max_workers": 4,
+        "scrape_min_expected_tickers": 1,
     }
     config.update(overrides)
     return config
@@ -110,7 +110,7 @@ class TestInit(unittest.TestCase):
     def test_yahoo_disabled(self, mock_config, mock_scraper_cls,
                              mock_mysql_cls, mock_datetime, mock_delay):
         mock_config.return_value = _default_config(
-            scrape_yahoo_finance=False, scrape_finviz=False
+            scrape_yahoo_finance=False
         )
         scraper = mock_scraper_cls.return_value
         scraper.scrape_all_data.return_value = []
@@ -210,6 +210,49 @@ class TestInit(unittest.TestCase):
             init()
 
         scraper.scrape_all_data.assert_called_once()
+
+    def test_scrape_below_threshold_skips_db_update(self, mock_config, mock_scraper_cls,
+                                                    mock_mysql_cls, mock_datetime, mock_delay):
+        """Canary: a scrape returning fewer than scrape_min_expected_tickers must NOT replace the table."""
+        mock_config.return_value = _default_config(scrape_min_expected_tickers=5)
+        scraper = mock_scraper_cls.return_value
+        scraper.get_dataset_version.return_value = "2026-06-25 03:09:53"
+        scraper.scrape_all_data.return_value = [
+            {"Symbol": "AAPL", "Price": 150.0},
+            {"Symbol": "MSFT", "Price": 300.0},
+        ]
+        mysql = mock_mysql_cls.return_value
+        mysql.__enter__ = MagicMock(return_value=mysql)
+        mysql.__exit__ = MagicMock(return_value=False)
+        mysql.check_db_update_dates.return_value = {"drip_updated_gmt": "2026-06-24 03:09:53"}
+
+        with self.assertRaises(BreakLoop):
+            from divifilter_data_updater.divifilter_data_updater_runner import init
+            init()
+
+        scraper.scrape_all_data.assert_called_once()
+        mysql.update_data_table_from_data_frame.assert_not_called()
+
+    def test_scrape_at_threshold_updates_db(self, mock_config, mock_scraper_cls,
+                                            mock_mysql_cls, mock_datetime, mock_delay):
+        """A scrape meeting the threshold proceeds with the DB replace."""
+        mock_config.return_value = _default_config(scrape_min_expected_tickers=2)
+        scraper = mock_scraper_cls.return_value
+        scraper.get_dataset_version.return_value = "2026-06-25 03:09:53"
+        scraper.scrape_all_data.return_value = [
+            {"Symbol": "AAPL", "Price": 150.0},
+            {"Symbol": "MSFT", "Price": 300.0},
+        ]
+        mysql = mock_mysql_cls.return_value
+        mysql.__enter__ = MagicMock(return_value=mysql)
+        mysql.__exit__ = MagicMock(return_value=False)
+        mysql.check_db_update_dates.return_value = {"drip_updated_gmt": "2026-06-24 03:09:53"}
+
+        with self.assertRaises(BreakLoop):
+            from divifilter_data_updater.divifilter_data_updater_runner import init
+            init()
+
+        mysql.update_data_table_from_data_frame.assert_called_once()
 
 
 if __name__ == '__main__':

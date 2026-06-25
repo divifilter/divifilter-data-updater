@@ -1,8 +1,31 @@
 import unittest
 from unittest.mock import patch, MagicMock, call
+from datetime import datetime, timedelta
 import pandas as pd
 import math
 from divifilter_data_updater.db_functions import MysqlConnection
+
+
+@patch('divifilter_data_updater.db_functions.create_engine')
+class TestGetUpdateAgeSeconds(unittest.TestCase):
+
+    def test_returns_age_for_known_name(self, mock_create_engine):
+        conn = MysqlConnection("mysql://user:pass@host/db")
+        past = (datetime.now() - timedelta(seconds=120)).strftime("%Y-%m-%d %H:%M:%S")
+        with patch.object(conn, 'check_db_update_dates', return_value={"yahoo_finance": past}):
+            age = conn.get_update_age_seconds("yahoo_finance")
+        self.assertGreaterEqual(age, 110)
+        self.assertLessEqual(age, 200)
+
+    def test_returns_none_for_missing_name(self, mock_create_engine):
+        conn = MysqlConnection("mysql://user:pass@host/db")
+        with patch.object(conn, 'check_db_update_dates', return_value={}):
+            self.assertIsNone(conn.get_update_age_seconds("yahoo_finance"))
+
+    def test_returns_none_for_unparseable(self, mock_create_engine):
+        conn = MysqlConnection("mysql://user:pass@host/db")
+        with patch.object(conn, 'check_db_update_dates', return_value={"yahoo_finance": "garbage"}):
+            self.assertIsNone(conn.get_update_age_seconds("yahoo_finance"))
 
 
 @patch('divifilter_data_updater.db_functions.create_engine')

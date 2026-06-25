@@ -27,8 +27,9 @@ def read_configurations(config_folder: str = "config") -> dict:
     #                                                                default_value="/tmp/latest_dividend_radar.xlsx")
     config["mysql_uri"] = parser.read_configuration_variable("mysql_uri")
     config["scrape_yahoo_finance"] = parser.read_configuration_variable("scrape_yahoo_finance", default_value=True)
-    config["scrape_finviz"] = parser.read_configuration_variable("scrape_finviz", default_value=True)
     config["disable_yahoo_logs"] = parser.read_configuration_variable("disable_yahoo_logs", default_value=True)
     config["max_random_delay_seconds"] = parser.read_configuration_variable("max_random_delay_seconds", default_value=3600)
     config["scrape_max_workers"] = parser.read_configuration_variable("scrape_max_workers", default_value=4)
+    config["scrape_min_expected_tickers"] = \
+        parser.read_configuration_variable("scrape_min_expected_tickers", default_value=100)
     return config

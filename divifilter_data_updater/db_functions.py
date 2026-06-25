@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer, Float, text, select, inspect
+from datetime import datetime
 import pandas as pd
 import math
 import re
@@ -149,27 +150,42 @@ class MysqlConnection:
         data_dict = dict(self.conn.execute(select(self.dividend_update_times)).fetchall())
         return data_dict
 
+    def get_update_age_seconds(self, name):
+        """
+        Return seconds since the named entry in 'dividend_update_times' was last
+        updated, or None if it's absent/unparseable. Timestamps are stored as
+        local-time "%Y-%m-%d %H:%M:%S" strings (see get_current_datetime_string).
+        """
+        raw = self.check_db_update_dates().get(name)
+        if not raw:
+            return None
+        try:
+            last = datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
+        except (ValueError, TypeError):
+            return None
+        return (datetime.now() - last).total_seconds()
+
     @staticmethod
     def _safe_param_name(column_name):
         """Convert column name to a safe SQL parameter name."""
         return re.sub(r'[^a-zA-Z0-9_]', '_', column_name)
 
-    def update_data_table(self, finviz_data: tuple):
+    def update_data_table(self, enrichment_data: tuple):
         """
-        Update the 'dividend_data_table' with enrichment data (Yahoo/Finviz).
+        Update the 'dividend_data_table' with enrichment data (Yahoo Finance).
         Batches column checks and per-ticker UPDATEs for performance.
 
         Args:
-            finviz_data (tuple): Tuple containing a timestamp and a dictionary of data for tickers.
+            enrichment_data (tuple): Tuple containing a timestamp and a dictionary of data for tickers.
         """
         # Check if the 'dividend_data_table' exists; if not, create it
         if not self.engine.dialect.has_table(self.conn, "dividend_data_table"):
             self.create_dividend_data_table()
 
-        if not (isinstance(finviz_data, tuple) and len(finviz_data) == 2):
-            raise ValueError("finviz_data must be a tuple containing a timestamp and a dictionary")
+        if not (isinstance(enrichment_data, tuple) and len(enrichment_data) == 2):
+            raise ValueError("enrichment_data must be a tuple containing a timestamp and a dictionary")
 
-        timestamp, ticker_data = finviz_data
+        timestamp, ticker_data = enrichment_data
 
         if not ticker_data:
             return
